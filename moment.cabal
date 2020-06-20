@@ -54,8 +54,8 @@ library
       build-depends: hscolour == 1.24.*
 
   -- Modules exported by the library.
-  exposed-modules:     Moment.Configuration, Moment.Types, Moment.Parse, Moment.Calendar.Core,
-                       Moment.Calendar.DaysCalendar, Moment.Calendar.Rules
+  exposed-modules:     Moment.Configuration, Moment.Types, Moment.Parse,
+                       Moment.Calendar.DaysCalendar
 
   -- Modules included in this library but not exported.
   -- other-modules:
