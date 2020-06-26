@@ -16,7 +16,4 @@ module Moment.Calendar.DaysCalendar where
 
   import Moment.Calendar.Internals (sort, nub)
 
-  class DaysCalendarFactory a where
-    make :: DaysCalendar a
-    del :: DaysCalendar a
-    get :: DaysCalendar a
+
