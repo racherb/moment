@@ -17,7 +17,7 @@ Portability :  non-portable
 {-# OPTIONS_GHC -fwarn-dodgy-imports #-}
 {-# OPTIONS_GHC -fwarn-identities #-}
 
-{-# LANGUAGE DeriveDataTypeable, ScopedTypeVariables, FlexibleContexts #-}
+{-# LANGUAGE ScopedTypeVariables, FlexibleContexts #-}
 
 module Moment.Calendar.Internals (
 -- * Tipos
@@ -95,9 +95,11 @@ fromDates
   singleton :: (YearCalendar, MonthCalendar, V.Vector a) -> DaysCalendar a
   singleton x = DaysCalendar $ V.singleton x
 
+  instance Semigroup (DaysCalendar a) where
+    (DaysCalendar a) <> (DaysCalendar b) = DaysCalendar (a V.++ b)
+
   instance Monoid (DaysCalendar a) where
     mempty = empty
-    mappend (DaysCalendar a) (DaysCalendar b) = DaysCalendar (a V.++ b)
 
   instance Functor DaysCalendar where
     fmap f dc = DaysCalendar fm
@@ -300,7 +302,7 @@ fromDates
   -- v es el valor del tramo
   -- t es la tupla con el tramo (desde, hasta)
   -- n es el tamaño final del vector tramo
-  section_ :: (Num idDay2BiDay) => BiDay -> (IdDay, IdDay) -> Int -> V.Vector BiDay
+  --section_ :: (Num idDay2BiDay) => BiDay -> (IdDay, IdDay) -> Int -> V.Vector BiDay
   section_ v t 0 = V.empty
   section_ v (ti, tf) n = case (compare (tf - ti) 0) of
                                 EQ -> pulse_ v 0 tf n
