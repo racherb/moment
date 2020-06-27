@@ -12,7 +12,15 @@ Portability :  non-portable
 For example:
 
 @
-  let dc = DaysCalendar $ V.fromList [(2016,12, V.fromList [1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0])]
+  oc = ceros $ singleton (2019, 12, V.fromList []) 
+  jc = ones $ singleton (2020, 1, V.fromList [])
+  fc = step 1 1 30 $ singleton (2020, 2, V.fromList [])
+  
+  dc = oc <> jc <> fc
+
+  ac = mkDaysCalendar 2020 03 (V.fromList [1,1,1])
+  
+  de = DaysCalendar $ V.fromList [(2016,12, V.fromList [1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0])]
   
 @
 
@@ -138,9 +146,8 @@ fromDates
 
   {-|
     'qyearc' Get all the DaysCalendar elements that belong to the given year
-    >>> qyearc 2016 dc
-    DaysCalendar [(2016,[(12,[1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0])])]
-  -}
+    >>> qyearc 2020 dc
+    DaysCalendar {unDaysCalendar = [(2020,1,[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]),(2020,2,[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1])]}  -}
   --qyearc :: YearCalendar -> DaysCalendar a
   qyearc :: YearCalendar ->  DaysCalendar a -> DaysCalendar a
   qyearc year dayscal = case lenyc of
@@ -163,8 +170,8 @@ fromDates
     -- @
     --
     -- @
-    --    qmonthc 2017 1 dc
-    --    DaysCalendar [(2017,[(1,[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1])])]
+    --    qmonthc 2020 1 dc
+    --    DaysCalendar {unDaysCalendar = [(2020,2,[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1])]}
     -- @
   qmonthc :: YearCalendar -> MonthCalendar -> DaysCalendar a -> DaysCalendar a
   qmonthc year month dayscal = case lenyc of
@@ -179,23 +186,24 @@ fromDates
               where
                   ans = if (yyyy==(fst3 tdc) && mm==(snd3 tdc)) then singleton tdc else empty
 
-  -- | Extae todos los años contenidos en un DaysCalendar dado
-  -- devuelve una lista ordenada de elementos únicos
+  -- | Extract every year you present at a given DaysCalendar
+  -- Returns an ordered list of unique items
   extractYearsCalendar :: DaysCalendar a -> V.Vector YearCalendar
   extractYearsCalendar (DaysCalendar d) = sort . nub $ fmap fst3 d
   --sort . nub $ fmap (tft3)
 
- -- | Extrae todos los años y meses únicos de DaysCalendar
+ -- | Extract every single year and month from a 'DaysCalendar'
   extractYearsMonthCalendar :: DaysCalendar a -> V.Vector (YearCalendar, MonthCalendar)
   extractYearsMonthCalendar (DaysCalendar d) = sort . nub $ fmap tft3 d
 
-  -- | Extrae todos los meses contenidos en un año calendario DaysCalendar
+  -- | Extract all the months contained in a calendar year of 'DaysCalendar'
   extractMonthsOfYearCalendar :: YearCalendar -> DaysCalendar a -> V.Vector MonthCalendar
   extractMonthsOfYearCalendar year dayscal = sort . nub $ sndpart
     where
         (DaysCalendar v) = qyearc year dayscal
         sndpart = fmap snd3 v
 
+  -- | It extracts all the defined calendar days for a given calendar year and month.
   extractDaysOfMonthCalendar :: (Eq a) => YearCalendar -> MonthCalendar -> DaysCalendar a ->  V.Vector (V.Vector a)
   extractDaysOfMonthCalendar year month dayscal = nub $ fmap (thr3) mcal
     where
@@ -209,15 +217,6 @@ fromDates
 
   dropymdc :: YearCalendar -> MonthCalendar -> DaysCalendar a -> DaysCalendar a
   dropymdc y m dc = DaysCalendar $ (V.filter (\x -> not ((fst3 x)==y && (snd3 x)==m)) (unDaysCalendar dc))
-
-  {-testT :: (Typeable a) => DaysCalendar a -> IO ()
-  testT dc = case x of
-                  (Just BiDay) -> show "BiDay"
-                  (Just IdDay) -> show ("IdDay")
-                  Nothing -> show "Desconocido"
-    where
-      x = cast $ unDaysCalendar dc
-      -}
 
   resume :: DaysCalendarOp -> DaysCalendar BiDay -> DaysCalendar BiDay
   resume mth dc = case lenuy of
@@ -246,15 +245,17 @@ fromDates
               m = snd tym
               nd = nDays y m
 
-  -- | Normaliza DaysCalendar (aplica resume con método DcOr)
+  -- | Resume or normalize the elements of a given DaysCalendar type.
+  -- It is an application of the function 'resume' with 'DcOr' method.
   normalize :: DaysCalendar BiDay -> DaysCalendar BiDay
-  normalize dc = resume DcOr dc
+  normalize = resume DcOr
 
-  -- | Join de DaysCalendar basado en el operador DcAnd
+  -- | Merges the elements of DaysCalendar based on the AND operator.
+  -- Join two DaysCalendar based on 'DcAnd' operator
   and :: DaysCalendar BiDay -> DaysCalendar BiDay -> DaysCalendar BiDay
   and dc1 dc2 = resume DcAnd $ dc1<>dc2
 
-  --Reversa DaysCalendar por año y mes
+  -- | Reverse DaysCalendar by year and month
   reverse :: DaysCalendar a  -> DaysCalendar a --V.Vector (YearCalendar, MonthCalendar, V.Vector a)
   reverse dc = DaysCalendar $ V.reverse (unDaysCalendar dc)
 
@@ -270,6 +271,7 @@ fromDates
     where
       ni = n - (V.length v)
 
+  -- |  Mark (or replace) all DaysCalendar elements with values 1
   ones :: DaysCalendar a -> DaysCalendar BiDay
   ones dc = DaysCalendar $ fmap (\(x,y) -> (x,y, ones_ $ nDays x y)) uqy
     where
@@ -278,6 +280,7 @@ fromDates
   ones_ :: Int -> V.Vector BiDay
   ones_ n = V.replicate n 1
 
+  -- | Uncheck (or replace) all DaysCalendar items with 0 values
   ceros :: DaysCalendar a -> DaysCalendar BiDay
   ceros dc = DaysCalendar $ fmap (\(x,y) -> (x,y, ceros_ $ nDays x y)) uqy
     where
@@ -298,23 +301,26 @@ fromDates
     where
       pattrn = (replicate s v) <> replicate s (invert_ v)
 
-  -- | Genera un paso escalón con ccaracteristicas v s n a lo largo de todo dc
+  -- | Generates a step with 'v' 's' 'n' features throughout 'DaysCalendar'
+  -- 'v' is the initial value of the step (0 or 1)
+  -- 's' is the step
+  -- 'n' is the number of values to be generated
   step :: BiDay -> Int -> Int -> DaysCalendar a -> DaysCalendar BiDay
   step v s n dc = normalize $ DaysCalendar (fmap (\(x,y,d) -> (x,y, step_ v s n)) (unDaysCalendar dc))
 
-  -- | Paso escalón comenzando con valores 1
+  -- | Step step starting with values 1
   stepones_ ::  Int -> Int -> V.Vector BiDay
-  stepones_ s n = step_ 1 s n
+  stepones_ = step_ 1
 
-  -- | Paso escalón comenzando con valores 0
+  -- | Step step starting with values 0
   stepceros_ :: Int -> Int -> V.Vector BiDay
-  stepceros_ s n = step_ 0 s n
+  stepceros_ = step_ 0
 
-  -- | Pulso de longitud n de valor s con frecuencia f a partir la posición p
-  -- s: es el valor de la señal o del pulso
-  -- f: es la frecuencua del pulso a lo largo del vector resultante
-  -- p: Es la posición inicial en la comenzará a aparecer el pulso
-  -- n: Es el tamaño final del vector pulso
+  -- | Pulse length 'n' value 's' with frequency 'f' from position 'p
+  -- 's' is the value of the signal or pulse
+  -- 'f' is the frequency of the pulse along the resulting vector
+  -- 'p' is the initial position in which the pulse will start to appear
+  -- 'n' is the final size of the pulse vector
   pulse_ :: (Num Int) => BiDay -> Int -> Int -> Int -> V.Vector BiDay
   pulse_ s f p n = case (compare (n - p1) 0) of
                          EQ -> ans
@@ -326,15 +332,16 @@ fromDates
       frc = if (f/=0) then (mkDfrec p1 f n) else [p1]
       ans = update_ frc s vb
 
-  -- | Pulso unitario, la señal s aparece solo una vez a lo largo del vector resultante
+  -- | Unitary pulse, the signal 's' appears only once along the resulting vector
   pulse1_ :: (Num Int) => BiDay -> Int -> Int -> V.Vector BiDay
   pulse1_ s p n = pulse_ s 0 p n
 
-  -- | Función definida por tramos
-  -- v es el valor del tramo
-  -- t es la tupla con el tramo (desde, hasta)
-  -- n es el tamaño final del vector tramo
+  -- | Function defined by sections
+  -- 'v' is the value of the leg
+  -- 't' is the tuple with the stretch (from, to)
+  -- 'n' is the final size of the leg vector
   --section_ :: (Num idDay2BiDay) => BiDay -> (IdDay, IdDay) -> Int -> V.Vector BiDay
+  section_ :: BiDay -> (Int, Int) -> Int -> V.Vector BiDay
   section_ v t 0 = V.empty
   section_ v (ti, tf) n = case (compare (tf - ti) 0) of
                                 EQ -> pulse_ v 0 tf n
@@ -344,23 +351,15 @@ fromDates
       vb = replica_ n [(invert_ v)]
       gta = update_ [ti..tf] v vb
 
-
-  -- | Construye un vector con la distribución de frecuencias IdDay
+  -- | Build a vector with the 'IdDay' frequency distribution
   mkDfrec :: (Num Int) => BiDay -> Int -> Int -> [IdDay]
-  mkDfrec p 0 n = [p] --Si la frecuencia es 0 entonces devolver la posición
-  mkDfrec p f 0 = [] --Si el tamaño de la muestra resultante es 0
+  mkDfrec p 0 n = [p] --If the frequency is 0 then return the position
+  mkDfrec p f 0 = []  --If the resulting sample size is 0
   mkDfrec p f n = takeWhile (<=n) $ scanl (\acc x -> acc+f) p stl
     where
       stl = replicate ((div n f)+1) 0
 
-  -- | Pulso unitario
-  pulseu_ :: BiDay -> Int -> V.Vector BiDay --TODO: Implementar
-  pulseu_ s p = V.empty
-
-  -- | Rampa
-  --ramp_
-
-  -- | Devuelve  DaysCalendar con los días impares de dc
+  -- | Return 'DaysCalendar' with the odd days of the 'DaysCalendar' entry
   -- 9999 12 31 as infinite
   oddd :: DaysCalendar BiDay -> DaysCalendar BiDay
   oddd dc = fromDates $ V.filter (/=(toDay 9999 12 31)) odds
@@ -368,14 +367,15 @@ fromDates
       dt = toDates dc
       odds = fmap (\x -> if (odd $ thr3 (toGregorian x)) then x else (toDay 9999 12 31)) dt
 
-  -- | Devuelve DaysCalendar con los días pares de dc
+  -- | Return 'DaysCalendar' with even numbered days from the 'DaysCalendar' entry
   evend :: DaysCalendar BiDay -> DaysCalendar BiDay
   evend dc = fromDates $ V.filter (/=(toDay 9999 12 31)) odds
     where
       dt = toDates dc
       odds = fmap (\x -> if (even $ thr3 (toGregorian x)) then x else (toDay 9999 12 31)) dt
 
-  -- | Replica n veces el patrón p de la lista [BiDay] dentro de dc
+  -- | Replicates 'n' times the pattern 'p' within the 'DaysCalendar
+  -- The pattern is a 'BiDay' type list
   replica :: Int -> [BiDay] -> DaysCalendar BiDay -> DaysCalendar BiDay
   replica n p dc = normalize $ DaysCalendar (fmap (\(x,y,d) -> (x,y, replica_ n p)) (unDaysCalendar dc))
 
@@ -395,7 +395,7 @@ fromDates
   mkIdDays_ :: YearCalendar -> MonthCalendar -> V.Vector IdDay
   mkIdDays_ y m = V.fromList [1..(nDays y m)]
 
-  -- | Construye un tipo DaysCalendar
+  -- | Build a DaysCalendar type
   -- @
   --    mkDaysCalendar 2017 4 (step_ 1 2 9)
   --
@@ -404,7 +404,7 @@ fromDates
   mkDaysCalendar y m k = normalize . singleton $ (y, m, k)
 
 
-  --Tipo de operadores de DaysCalendar Operator
+  -- | DaysCalendar Operator Type
   data DaysCalendarOp = DcOr
                       | DcAnd
                       | DcInvert
@@ -412,9 +412,7 @@ fromDates
                       | DcSustract
                       deriving (Show, Eq, Read)
 
-  --Pliega los elementos de una lista de acuerdo al operador de calendario a aplicar
-  --En este caso ajoinc
-  --resumeItself :: V.Vector BiDay -> V.Vector (V.Vector BiDay) -> DaysCalendarOp -> V.Vector BiDay
+  -- | Folds the items on a list according to the calendar operator to be applied  --En este caso ajoinc
   resumeItself ::  V.Vector BiDay -> Int -> V.Vector (V.Vector BiDay) -> DaysCalendarOp -> V.Vector BiDay
   resumeItself acc nd vv mth = case lwe of
                                   0 -> acc
@@ -433,44 +431,42 @@ fromDates
   or :: DaysCalendar BiDay -> DaysCalendar BiDay -> DaysCalendar BiDay
   or dc1 dc2 = resume DcOr $ dc1<>dc2
 
-  --Atomic join de calendarios
-  --Las listas pueden tener tamaños distintas, se devuelve resultado con tamaño de la menor
-  ordc ::  V.Vector BiDay -> V.Vector BiDay -> V.Vector BiDay
+  -- | Atomic join of calendars
+  -- Lists can have different sizes, result is returned with size of the smallest  ordc ::  V.Vector BiDay -> V.Vector BiDay -> V.Vector BiDay
   ordc dc1 dc2
     | (dc1==V.empty) && (dc2==V.empty)        = V.empty
     | (dc1/=V.empty) && (dc2==V.empty)        = dc1
     | (dc1==V.empty) && (dc2/=V.empty)        = dc2
     | otherwise                               = V.zipWith (ordc_) dc1 dc2
 
-  --Operador unitario de join de dias de calendario
-  --Antiguo ojoinc
+  -- | Joint operator for Calendar Day
+  -- (Old ojoinc)
   ordc_ ::  BiDay -> BiDay -> BiDay
   ordc_ dc1 dc2
     | dc1' == 1 || dc2' == 1        = 1     --Si alguno de los dos es 1 entonces 1
     | dc1' == 0 && dc2' == 0        = 0     --Si ambos son 0 entonces 0
     | dc1' < 0 || dc2' < 0          = 0     --Si alguno es negativo, entonces 0
     | dc1' > 1 || dc2' > 1          = 1     --Si cualquiera de los dos es mayor a 1 entonces 1
-    | otherwise                   = 0     --Cualquier otro caso considerar 0
+    | otherwise                     = 0     --Cualquier otro caso considerar 0
     where
       dc1' = if dc1 >=1 then 1 else 0
       dc2' = if dc2 >=1 then 1 else 0
 
-  -- | Invert dc
+  -- | Invert DaysCalendar
   invert :: DaysCalendar BiDay -> DaysCalendar BiDay
   invert = fmap invert_
 
-  -- | Inversión valores de un vector BiDay
+  -- | Inversion values of a BiDay vector
   invertd ::  V.Vector BiDay -> V.Vector BiDay
   invertd dc = if (dc==V.empty) then V.empty else fmap (invert_) dc
 
-  -- | Operador de inversión de días de BiDay
+  -- | BiDay investment operator
   invert_ ::  BiDay -> BiDay
   invert_ dc
     | dc == 0 = 1
     | dc == 1 = 0
     | dc < 0  = 1
     | dc > 1  = 0
-
 
   -- | Join de DaysCalendar basado en el operador DcSustract
   sustract :: DaysCalendar BiDay -> DaysCalendar BiDay -> DaysCalendar BiDay
@@ -561,7 +557,7 @@ fromDates
   moveDays :: Integer -> V.Vector Day -> V.Vector Day
   moveDays n d = fmap (\x -> addDays n x) d
 
-  -- ! Suma o resta n días al calendario dado en dc
+  -- Suma o resta n días al calendario dado en dc
   move :: Integer -> DaysCalendar BiDay -> DaysCalendar BiDay
   move n dc = fromDates $ moveDays (n) (toDates dc)
 
@@ -605,7 +601,6 @@ fromDates
           let ct = (y'::YearCalendar, m'::MonthCalendar, idDay2BiDay ci)
           ct
         ) uym
-
 
   --Convierte  un vector IdDay en otro vector con las fechas en formato de fecha Day
   idDay2Day :: YearCalendar -> MonthCalendar -> V.Vector IdDay -> V.Vector Day
@@ -675,11 +670,12 @@ fromDates
   tft3 (x, y, _) = (x, y)
 
 
-  --Obtiene la cantidad de días máximo de un mes dado
+  -- | Obtiene la cantidad de días máximo de un mes dado
+  -- nDays y m 
   --y es year de 4 dígitos
   --m es month de 2 dígitos máximo
   nDays :: Integer -> Int -> Int
-  nDays y m = gregorianMonthLength y m
+  nDays = gregorianMonthLength
 
 
   {-
