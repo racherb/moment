@@ -1,11 +1,25 @@
 {-|
-Module      :  Moment.Calendar.DaysCalendar
-Description :  Definición y Operaciones de Calendarios
+Module      :  Moment.Calendar.Internals
+Description :  Internal Module of Definition and Operations of Calendars
 Copyright   :  (c) Raciel Hernández Barroso
 License     :  MIT
 Stability   :  experimental
 Portability :  non-portable
+
+/Definition/.
+
+'DaysCalendar' is a type that is composed of a list of values containing the month, day and year tuples.
+For example:
+
+@
+  let dc = DaysCalendar $ V.fromList [(2016,12, V.fromList [1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0])]
+  
+@
+
 -}
+
+-- | The 'DaysCalendar' module allows advanced operations on calendar days in a simple and readable way, facilitating the scheduling and the elaboration of new calendar specifications.
+-- ! This module is internal and it is not recommended to use it directly. Use DaysCalendar instead.
 
 {-# OPTIONS_GHC -fwarn-missing-signatures #-}
 {-# OPTIONS_GHC -fwarn-unused-imports #-}
@@ -20,31 +34,31 @@ Portability :  non-portable
 {-# LANGUAGE ScopedTypeVariables, FlexibleContexts #-}
 
 module Moment.Calendar.Internals (
--- * Tipos
+-- * Types
 Day,
 DaysCalendar(..),
 BiDay,
 YearCalendar,
 MonthCalendar,
--- * Vectores
+-- * Vectors
 nub,
 sort,
 (!),
--- * Constructores
+-- * Constructors
 empty,
 singleton,
 ones,
 ceros,
 step,
 replica,
--- * DaysCalendar funciones
+-- * DaysCalendar functions
 or,
 and,
 invert,
 add,
 sustract,
 normalize,
--- * Conversión
+-- * Conversion
 toDay,
 toDates,
 fromDates
@@ -60,9 +74,18 @@ fromDates
   import Data.Monoid
   import Data.Functor
   import Data.Typeable
-  --import qualified Data.Foldable as Fl
 
-  import Moment.Parse (makeUtcTime, extractYear, extractMonth, extractDay)
+  import Moment.Parse (
+    makeUtcTime,
+    extractYear,
+    extractMonth,
+    extractDay
+    )
+  
+  -- * Important information
+  -- ! Deprecated function, do not use
+  -- ? Expose in API?
+  -- TODO: Refactor this method
 
   type YearCalendar = Integer
   type MonthCalendar = Int
@@ -70,13 +93,15 @@ fromDates
   type WeekMonth = Int
   type BiDay = Int
   type IdDay = Int
-  --type InxDay = Int
-
+  
+  -- | newtype DaysCalendar a = DaysCalendar {unDaysCalendar :: V.Vector (YearCalendar, MonthCalendar, V.Vector a)} deriving (Show, Eq, Read)
   newtype DaysCalendar a = DaysCalendar {unDaysCalendar :: V.Vector (YearCalendar, MonthCalendar, V.Vector a)} deriving (Show, Eq, Read)
-
+  
+  -- | Return the empty 'DaysCalendar' type element
   empty :: DaysCalendar a
   empty = DaysCalendar V.empty
 
+  -- | Returns the unique elements of a vector
   nub :: Eq a => V.Vector a -> V.Vector a
   {-# INLINE nub #-}
   nub v
@@ -84,6 +109,7 @@ fromDates
     | V.any (== V.head v) (V.tail v) = nub $ V.tail v
     | otherwise = V.cons (V.head v) (nub $ V.tail v)
 
+  -- | Arrange the elements of a vector
   sort :: Ord a => V.Vector a -> V.Vector a
   {-# INLINE sort #-}
   sort v = ST.runST $ do
@@ -91,31 +117,27 @@ fromDates
     V.sort mv
     V.freeze mv
 
-  -- | Crea un tipo DaysCalendar a partir de una expresión mínima
+  -- | Create a 'DaysCalendar' type from an arbitrary minimum expression
   singleton :: (YearCalendar, MonthCalendar, V.Vector a) -> DaysCalendar a
   singleton x = DaysCalendar $ V.singleton x
-
+  
+  -- | Semigroup instance of type 'DaysCalendar'
   instance Semigroup (DaysCalendar a) where
     (DaysCalendar a) <> (DaysCalendar b) = DaysCalendar (a V.++ b)
 
+  -- | Monoid instance of type 'DaysCalendar'
   instance Monoid (DaysCalendar a) where
     mempty = empty
 
+  -- | Functor instance of type 'DaysCalendar'
   instance Functor DaysCalendar where
     fmap f dc = DaysCalendar fm
       where
         fm = fmap (\(x, y, z) -> (x,y, fmap (\d -> f d) z)) v
         v = unDaysCalendar dc
 
-  {-instance Foldable DaysCalendar where
-    foldl f dc = DaysCalendar $ foldl (\acc (x,y,z) -> V.snoc acc (f x,y,z)) (V.empty) v
-      where
-        v = unDaysCalendar dc
-        -}
-
-
   {-|
-    'qyearc' Obtiene todos lo elementos DaysCalendar que pertenecen al año dado
+    'qyearc' Get all the DaysCalendar elements that belong to the given year
     >>> qyearc 2016 dc
     DaysCalendar [(2016,[(12,[1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0])])]
   -}
@@ -133,6 +155,17 @@ fromDates
               where
                   ans = if (year==fst3 tdc) then singleton tdc else empty
 
+  -- | Get all DaysCalendar items belonging to the given year and month
+    --
+    -- @
+    --    qmonthc 2017 2 dc
+    --    DaysCalendar []
+    -- @
+    --
+    -- @
+    --    qmonthc 2017 1 dc
+    --    DaysCalendar [(2017,[(1,[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1])])]
+    -- @
   qmonthc :: YearCalendar -> MonthCalendar -> DaysCalendar a -> DaysCalendar a
   qmonthc year month dayscal = case lenyc of
                                     0  -> empty
@@ -171,7 +204,6 @@ fromDates
   dropydc :: YearCalendar -> DaysCalendar a -> DaysCalendar a
   dropydc y dc = DaysCalendar $ (V.filter (\x -> ((fst3 x)/=y)) (unDaysCalendar dc))
 
-  -- ! Elimina todos los elementos del mes
   dropmdc :: MonthCalendar -> DaysCalendar a -> DaysCalendar a
   dropmdc m dc = DaysCalendar $ (V.filter (\x -> ((snd3 x)/=m)) (unDaysCalendar dc))
 
