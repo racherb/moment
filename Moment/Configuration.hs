@@ -20,48 +20,29 @@ module Moment.Configuration where
 
   weekdays = [1..7]
   --Monday Tuesday Wednesday Thursday Friday Saturday Sunday
-  weekdays' = [(1,"Mon", "Monday"),
-                   (2,"Tue", "Tuesday"),
-                   (3,"Wed", "Wednesday"),
-                   (4,"Thu", "Thursday"),
-                   (5,"Fri", "Friday"),
-                   (6,"Sat", "Saturday"),
-                   (7,"Sun", "Sunday")]
+  weekdays'         = [(1, "Mon", "Monday"),
+                       (2, "Tue", "Tuesday"),
+                       (3, "Wed", "Wednesday"),
+                       (4, "Thu", "Thursday"),
+                       (5, "Fri", "Friday"),
+                       (6, "Sat", "Saturday"),
+                       (7, "Sun", "Sunday")]
 
-  firstDayOfTheWeek = 1       --Primer día de la semana -Monday
-  workday = [1..5]            --Días de trabajo -Monday to Friday
-  weekend = [6,7]             --Días de fin de semana -Saturday & Sunday
-  newDayTime = "00:00:00"     --Hora en que inicia el nuevo día
-  midTime = "00:00:00"        --Hora de media noche
+  firstDayOfTheWeek = 1              --Primer día de la semana -Monday
+  workdays          = [1..5]         --Días de trabajo -Monday to Friday
+  weekend           = [6,7]          --Días de fin de semana -Saturday & Sunday
+  newDayTime        = "00:00:00"     --Hora en que inicia el nuevo día
+  midTime           = "00:00:00"     --Hora de media noche
 
-  weeksOnYear = 52            -- 52 semanas en un año normal
-  weeksOnYear' = 53           -- 53 semanas tiene un año biciesto
-  monthsOnYear = 12           -- 12 meses tiene un año
-  daysOnWeek = 7              -- 7 días tiene una semana
-  daysOnYear = (weeksOnYear * daysOnWeek) + 1
-  daysOnYear' = (weeksOnYear' * daysOnWeek) + 1
-  hoursOnDay = 24             -- 24 horas tiene un día
-  minOnHour = 60          -- 60 minutos tiene una hora
-  secOnMinute = 60        -- 60 segundos tiene un minuto
-  woy = weeksOnYear
-  moy = monthsOnYear
-  dow = daysOnWeek
-  doy = daysOnYear
-  hod = hoursOnDay
-  moh = minOnHour
-  som = secOnMinute
-
-
-  --weekendRg :: RuleGroup
-  --weekendRg = ["WD6", "WD7"] :: RuleGroup --WD Significa WeekDay
-
-  --festdayHs :: [(YearCalendar, RuleGroup)]
-  --festdayHs = [(2017, ["01/01", "14/04", "15/04", "19/04", "01/05", "21/05", "26/06", "02/07", "16/07", "15/08", "18/09", "19/09", "09/10", "27/10", "01/11", "19/11", "08/12", "17/12", "25/12"])]
-
-
-  --Obtiene, si existe, el gupo de reglas a aplicar para los dias festivos del año de consulta
-  --getFestDays :: YearCalendar -> Maybe RuleGroup
-  --getFestDays year = lookup year festdayHs
+  weeksOnYear       = 52             -- 52 semanas en un año normal
+  weeksOnYear'      = 53             -- 53 semanas tiene un año biciesto
+  monthsOnYear      = 12             -- 12 meses tiene un año
+  daysOnWeek        = 7              -- 7 días tiene una semana
+  daysOnYear        = (weeksOnYear * daysOnWeek) + 1
+  daysOnYear'       = (weeksOnYear' * daysOnWeek) + 1
+  hoursOnDay        = 24             -- 24 horas tiene un día
+  minOnHour         = 60             -- 60 minutos tiene una hora
+  secOnMinute       = 60             -- 60 segundos tiene un minuto
 
   --Secuencia de meses en un año Calendario
   seqMonthsYearCalendar :: [Int]
