@@ -79,9 +79,6 @@ fromDates
   import qualified Data.Vector.Algorithms.Merge as V (sort)
   import Data.Time (formatTime, defaultTimeLocale, Day, toGregorian, addDays, utctDay, gregorianMonthLength)
   import qualified Control.Monad.ST as ST
-  import Data.Monoid
-  import Data.Functor
-  import Data.Typeable
 
   import Moment.Parse (
     makeUtcTime,
@@ -228,7 +225,7 @@ fromDates
           lenuy = V.length uniqyl
 
           resumeNext :: V.Vector (YearCalendar, MonthCalendar) -> DaysCalendar BiDay
-          resumeNext vny = case (V.length vny) of
+          resumeNext vny = case V.length vny of
                                  0 -> empty
                                  1 -> resumeYm (V.head vny)
                                  _ -> resumeYm (V.head vny) <> resumeNext (V.tail vny)
@@ -264,7 +261,7 @@ fromDates
   -- k es el valor de los nuevos elementos
   -- v es el vector de BiDay
   fullyd_ :: Int -> BiDay -> V.Vector BiDay -> V.Vector BiDay
-  fullyd_ n k v = case (compare ni 0) of
+  fullyd_ n k v = case compare ni 0 of
                         EQ -> v
                         LT -> V.take n v
                         GT -> v V.++ V.replicate ni k
@@ -322,14 +319,14 @@ fromDates
   -- 'p' is the initial position in which the pulse will start to appear
   -- 'n' is the final size of the pulse vector
   pulse_ :: (Num Int) => BiDay -> Int -> Int -> Int -> V.Vector BiDay
-  pulse_ s f p n = case (compare (n - p1) 0) of
+  pulse_ s f p n = case compare (n - p1) 0 of
                          EQ -> ans
                          LT -> V.empty
                          GT -> ans
     where
-      p1 = if (p == 0) then 1 else p --si la posición entrada es 0 se establece en 0
-      vb = replica_ n [(invert_ s)]
-      frc = if (f/=0) then (mkDfrec p1 f n) else [p1]
+      p1 = if p == 0 then 1 else p --si la posición entrada es 0 se establece en 0
+      vb = replica_ n [invert_ s]
+      frc = if f/=0 then mkDfrec p1 f n else [p1]
       ans = update_ frc s vb
 
   -- | Unitary pulse, the signal 's' appears only once along the resulting vector
@@ -343,12 +340,12 @@ fromDates
   --section_ :: (Num idDay2BiDay) => BiDay -> (IdDay, IdDay) -> Int -> V.Vector BiDay
   section_ :: BiDay -> (Int, Int) -> Int -> V.Vector BiDay
   section_ v t 0 = V.empty
-  section_ v (ti, tf) n = case (compare (tf - ti) 0) of
+  section_ v (ti, tf) n = case compare (tf - ti) 0 of
                                 EQ -> pulse_ v 0 tf n
                                 LT -> V.empty
                                 GT -> gta
     where
-      vb = replica_ n [(invert_ v)]
+      vb = replica_ n [invert_ v]
       gta = update_ [ti..tf] v vb
 
   -- | Build a vector with the 'IdDay' frequency distribution
@@ -458,7 +455,7 @@ fromDates
 
   -- | Inversion values of a BiDay vector
   invertd ::  V.Vector BiDay -> V.Vector BiDay
-  invertd dc = if (dc==V.empty) then V.empty else fmap (invert_) dc
+  invertd dc = if dc==V.empty then V.empty else fmap invert_ dc
 
   -- | BiDay investment operator
   invert_ ::  BiDay -> BiDay
@@ -485,7 +482,7 @@ fromDates
     | (v1==V.empty) && (v2==V.empty)        = V.empty
     | (v1/=V.empty) && (v2==V.empty)        = v1
     | (v1==V.empty) && (v2/=V.empty)        = v2
-    | otherwise                               = V.zipWith (sustract_) v1 v2
+    | otherwise                               = V.zipWith sustract_ v1 v2
 
 
   -- | Join de DaysCalendar basado en el operador DcAdd
@@ -505,7 +502,6 @@ fromDates
     | (v1/=V.empty) && (v2==V.empty)        = v1
     | (v1==V.empty) && (v2/=V.empty)        = v2
     | otherwise                               = V.zipWith add_ v1 v2
-
 
   weekday_ :: YearCalendar -> MonthCalendar -> WeekDay -> V.Vector BiDay
   weekday_ y m wd = fmap (\x -> if x==wd then 1 else 0) wdi
@@ -559,7 +555,7 @@ fromDates
 
   -- Suma o resta n días al calendario dado en dc
   move :: Integer -> DaysCalendar BiDay -> DaysCalendar BiDay
-  move n dc = fromDates $ moveDays (n) (toDates dc)
+  move n dc = fromDates $ moveDays n (toDates dc)
 
   move_ :: Num BiDay => YearCalendar -> MonthCalendar -> Int -> V.Vector BiDay -> V.Vector BiDay
   move_ y m n v = ans
@@ -594,7 +590,7 @@ fromDates
   fromDates :: V.Vector Day -> DaysCalendar BiDay
   fromDates d = normalize $ DaysCalendar dd
     where
-      gd = fmap (toGregorian) d
+      gd = fmap toGregorian d
       uym = nub $ fmap (\(x,m,d) -> (x,m)) gd
       dd = fmap (\(y', m') -> do
           let ci = V.filter (/=0) $ (fmap (\(y,m,x) -> if (y==y' && m==m') then x::IdDay else 0::IdDay) gd)
