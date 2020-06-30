@@ -39,7 +39,7 @@ For example:
 {-# OPTIONS_GHC -fwarn-dodgy-imports #-}
 {-# OPTIONS_GHC -fwarn-identities #-}
 
-{-# LANGUAGE ScopedTypeVariables, FlexibleContexts #-}
+{-# LANGUAGE ScopedTypeVariables, FlexibleContexts, MonoLocalBinds  #-}
 
 module Moment.Calendar.Internals (
 -- * Types
@@ -66,6 +66,8 @@ invert,
 add,
 sustract,
 normalize,
+holes,
+match,
 -- * Conversion
 toDay,
 toDates,
@@ -80,12 +82,7 @@ fromDates
   import Data.Time (formatTime, defaultTimeLocale, Day, toGregorian, addDays, utctDay, gregorianMonthLength)
   import qualified Control.Monad.ST as ST
 
-  import Moment.Parse (
-    makeUtcTime,
-    extractYear,
-    extractMonth,
-    extractDay
-    )
+  import Moment.Parse (makeUtcTime, extractYear, extractMonth, extractDay)
   
   -- * Important information
   -- ! Deprecated function, do not use
@@ -250,8 +247,25 @@ fromDates
   -- | Merges the elements of DaysCalendar based on the AND operator.
   -- Join two DaysCalendar based on 'DcAnd' operator
   and :: DaysCalendar BiDay -> DaysCalendar BiDay -> DaysCalendar BiDay
-  and dc1 dc2 = resume DcAnd $ dc1<>dc2
+  and dc1 dc2 = resume DcAnd $ dc1 <> dc2
 
+  match :: DaysCalendar BiDay -> DaysCalendar BiDay -> DaysCalendar BiDay
+  match dc1 dc2 = resume DcMatchAny $ dc1 <> dc2
+
+  -- | Operación de agrega (suma) BiDay
+  match_ ::  BiDay -> BiDay -> BiDay
+  match_ bd1 bd2
+    | bd1==1 && bd2==1  = 1
+    | bd1==0 && bd2==0  = 1
+    | otherwise         = 0
+
+  matchc ::  V.Vector BiDay -> V.Vector BiDay -> V.Vector BiDay
+  matchc v1 v2
+    | (v1==V.empty) && (v2==V.empty)        = V.empty
+    | (v1/=V.empty) && (v2==V.empty)        = v1
+    | (v1==V.empty) && (v2/=V.empty)        = v2
+    | otherwise                             = V.zipWith match_ v1 v2
+  
   -- | Reverse DaysCalendar by year and month
   reverse :: DaysCalendar a  -> DaysCalendar a --V.Vector (YearCalendar, MonthCalendar, V.Vector a)
   reverse dc = DaysCalendar $ V.reverse (unDaysCalendar dc)
@@ -407,6 +421,7 @@ fromDates
                       | DcInvert
                       | DcAdd
                       | DcSustract
+                      | DcMatchAny
                       deriving (Show, Eq, Read)
 
   -- | Folds the items on a list according to the calendar operator to be applied  --En este caso ajoinc
@@ -422,6 +437,7 @@ fromDates
                    DcAnd -> fullyd_ nd 0 $ anddc acc x
                    DcSustract -> fullyd_ nd 0 $ sustractc acc x
                    DcAdd -> fullyd_ nd 0 $ addc acc x
+                   DcMatch -> fullyd_ nd 0 $ matchc acc x
                    --DcInvert -> invertd x --NOTE: De momento la opción resume Invertido no está permitido
 
   -- | Join de DaysCalendar basado en el operador DcOr
@@ -484,7 +500,6 @@ fromDates
     | (v1==V.empty) && (v2/=V.empty)        = v2
     | otherwise                               = V.zipWith sustract_ v1 v2
 
-
   -- | Join de DaysCalendar basado en el operador DcAdd
   add :: DaysCalendar BiDay -> DaysCalendar BiDay -> DaysCalendar BiDay
   add dc1 dc2 = resume DcAdd $ dc1<>dc2
@@ -501,8 +516,12 @@ fromDates
     | (v1==V.empty) && (v2==V.empty)        = V.empty
     | (v1/=V.empty) && (v2==V.empty)        = v1
     | (v1==V.empty) && (v2/=V.empty)        = v2
-    | otherwise                               = V.zipWith add_ v1 v2
-
+    | otherwise                             = V.zipWith add_ v1 v2
+  
+  -- | Gets the mismatched items (or holes) between two 'DaysCalendar' types
+  holes :: DaysCalendar BiDay -> DaysCalendar BiDay -> DaysCalendar BiDay
+  holes dc1 dc2 = invert $ add dc1 dc2
+  
   weekday_ :: YearCalendar -> MonthCalendar -> WeekDay -> V.Vector BiDay
   weekday_ y m wd = fmap (\x -> if x==wd then 1 else 0) wdi
     where
@@ -534,6 +553,7 @@ fromDates
     where t = makeUtcTime y m d 0 0 0
 
   --weekMonthIndex :: (Num Int) => YearCalendar -> MonthCalendar -> IdDay -> Maybe Int
+  weekMonthIndex :: YearCalendar -> MonthCalendar -> IdDay -> [WeekMonth]
   weekMonthIndex y m d = rf --lookup ws rf
     where
       ws = read (formatTime defaultTimeLocale "%V" (makeUtcTime y m d 0 0 0))::WeekMonth
