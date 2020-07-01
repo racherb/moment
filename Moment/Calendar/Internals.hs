@@ -18,7 +18,7 @@ For example:
   
   dc = oc <> jc <> fc
 
-  ac = mkDaysCalendar 2020 03 (V.fromList [1,1,1])
+  ac = mkDaysCalendar 2020 03 (V.fromList [1,1,1,0,1])
   
   de = DaysCalendar $ V.fromList [(2016,12, V.fromList [1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0])]
   
@@ -59,6 +59,13 @@ ones,
 ceros,
 step,
 replica,
+-- * Queries
+qyearc,
+qmonthc,
+eyc,
+eymc,
+emyc,
+edmc,
 -- * DaysCalendar functions
 or,
 and,
@@ -182,24 +189,28 @@ fromDates
 
   -- | Extract every year you present at a given DaysCalendar
   -- Returns an ordered list of unique items
-  extractYearsCalendar :: DaysCalendar a -> V.Vector YearCalendar
-  extractYearsCalendar (DaysCalendar d) = sort . nub $ fmap fst3 d
+  -- eyc: extractYearsCalendar
+  eyc :: DaysCalendar a -> V.Vector YearCalendar
+  eyc (DaysCalendar d) = sort . nub $ fmap fst3 d
   --sort . nub $ fmap (tft3)
 
  -- | Extract every single year and month from a 'DaysCalendar'
-  extractYearsMonthCalendar :: DaysCalendar a -> V.Vector (YearCalendar, MonthCalendar)
-  extractYearsMonthCalendar (DaysCalendar d) = sort . nub $ fmap tft3 d
+ -- eymc: extractYearsMonthCalendar
+  eymc :: DaysCalendar a -> V.Vector (YearCalendar, MonthCalendar)
+  eymc (DaysCalendar d) = sort . nub $ fmap tft3 d
 
   -- | Extract all the months contained in a calendar year of 'DaysCalendar'
-  extractMonthsOfYearCalendar :: YearCalendar -> DaysCalendar a -> V.Vector MonthCalendar
-  extractMonthsOfYearCalendar year dayscal = sort . nub $ sndpart
+  -- emyc: extractMonthsOfYearCalendar
+  emyc :: YearCalendar -> DaysCalendar a -> V.Vector MonthCalendar
+  emyc year dayscal = sort . nub $ sndpart
     where
         (DaysCalendar v) = qyearc year dayscal
         sndpart = fmap snd3 v
 
   -- | It extracts all the defined calendar days for a given calendar year and month.
-  extractDaysOfMonthCalendar :: (Eq a) => YearCalendar -> MonthCalendar -> DaysCalendar a ->  V.Vector (V.Vector a)
-  extractDaysOfMonthCalendar year month dayscal = nub $ fmap (thr3) mcal
+  -- edmc: extractDaysOfMonthCalendar
+  edmc :: (Eq a) => YearCalendar -> MonthCalendar -> DaysCalendar a ->  V.Vector (V.Vector a)
+  edmc year month dayscal = nub $ fmap (thr3) mcal
     where
         mcal = unDaysCalendar $ qmonthc year month dayscal
 
@@ -218,7 +229,7 @@ fromDates
                                1 -> resumeYm (V.head uniqyl)
                                _ -> (resumeYm (V.head uniqyl)) <> resumeNext (V.tail uniqyl)
       where
-          uniqyl = extractYearsMonthCalendar dc
+          uniqyl = eymc dc
           lenuy = V.length uniqyl
 
           resumeNext :: V.Vector (YearCalendar, MonthCalendar) -> DaysCalendar BiDay
@@ -233,7 +244,7 @@ fromDates
                               1 -> singleton (y, m, fullyd_ nd 0 $ V.head qymd)
                               _ -> singleton $ (y, m, resumeItself V.empty nd qymd mth)
             where
-              qymd = extractDaysOfMonthCalendar y m dc
+              qymd = edmc y m dc
               lend = V.length qymd
               y = fst tym
               m = snd tym
@@ -249,6 +260,7 @@ fromDates
   and :: DaysCalendar BiDay -> DaysCalendar BiDay -> DaysCalendar BiDay
   and dc1 dc2 = resume DcAnd $ dc1 <> dc2
 
+  -- | Find any match between the elements of two 'DaysCalendar' types
   match :: DaysCalendar BiDay -> DaysCalendar BiDay -> DaysCalendar BiDay
   match dc1 dc2 = resume DcMatchAny $ dc1 <> dc2
 
@@ -260,12 +272,8 @@ fromDates
     | otherwise         = 0
 
   matchc ::  V.Vector BiDay -> V.Vector BiDay -> V.Vector BiDay
-  matchc v1 v2
-    | (v1==V.empty) && (v2==V.empty)        = V.empty
-    | (v1/=V.empty) && (v2==V.empty)        = v1
-    | (v1==V.empty) && (v2/=V.empty)        = v2
-    | otherwise                             = V.zipWith match_ v1 v2
-  
+  matchc = applyOperator match_
+
   -- | Reverse DaysCalendar by year and month
   reverse :: DaysCalendar a  -> DaysCalendar a --V.Vector (YearCalendar, MonthCalendar, V.Vector a)
   reverse dc = DaysCalendar $ V.reverse (unDaysCalendar dc)
@@ -286,7 +294,7 @@ fromDates
   ones :: DaysCalendar a -> DaysCalendar BiDay
   ones dc = DaysCalendar $ fmap (\(x,y) -> (x,y, ones_ $ nDays x y)) uqy
     where
-      uqy = extractYearsMonthCalendar dc
+      uqy = eymc dc
 
   ones_ :: Int -> V.Vector BiDay
   ones_ n = V.replicate n 1
@@ -295,7 +303,7 @@ fromDates
   ceros :: DaysCalendar a -> DaysCalendar BiDay
   ceros dc = DaysCalendar $ fmap (\(x,y) -> (x,y, ceros_ $ nDays x y)) uqy
     where
-      uqy = extractYearsMonthCalendar dc
+      uqy = eymc dc
 
   ceros_ :: Int -> V.Vector BiDay
   ceros_ n = V.replicate n 0
@@ -437,20 +445,26 @@ fromDates
                    DcAnd -> fullyd_ nd 0 $ anddc acc x
                    DcSustract -> fullyd_ nd 0 $ sustractc acc x
                    DcAdd -> fullyd_ nd 0 $ addc acc x
-                   DcMatch -> fullyd_ nd 0 $ matchc acc x
+                   DcMatchAny -> fullyd_ nd 0 $ matchc acc x
                    --DcInvert -> invertd x --NOTE: De momento la opción resume Invertido no está permitido
+
+  -- | Applies the operator function 'h' between two types 'DaysCalendar 
+  --{-# INLINE applyOperator #-}
+  applyOperator :: Eq b => (b -> b -> b) -> V.Vector b -> V.Vector b -> V.Vector b
+  applyOperator h v1 v2
+    | (v1==V.empty) && (v2==V.empty)        = V.empty
+    | (v1/=V.empty) && (v2==V.empty)        = v1
+    | (v1==V.empty) && (v2/=V.empty)        = v2
+    | otherwise                             = V.zipWith h v1 v2
 
   -- | Join de DaysCalendar basado en el operador DcOr
   or :: DaysCalendar BiDay -> DaysCalendar BiDay -> DaysCalendar BiDay
-  or dc1 dc2 = resume DcOr $ dc1<>dc2
+  or dc1 dc2 = resume DcOr $ dc1 <> dc2
 
   -- | Atomic join of calendars
   -- Lists can have different sizes, result is returned with size of the smallest  ordc ::  V.Vector BiDay -> V.Vector BiDay -> V.Vector BiDay
-  ordc dc1 dc2
-    | (dc1==V.empty) && (dc2==V.empty)        = V.empty
-    | (dc1/=V.empty) && (dc2==V.empty)        = dc1
-    | (dc1==V.empty) && (dc2/=V.empty)        = dc2
-    | otherwise                               = V.zipWith (ordc_) dc1 dc2
+  ordc :: V.Vector BiDay -> V.Vector BiDay -> V.Vector BiDay
+  ordc = applyOperator ordc_
 
   -- | Joint operator for Calendar Day
   -- (Old ojoinc)
@@ -494,11 +508,7 @@ fromDates
     | bd1==1 && bd2==0  = 1 --Pues 1, no se resta nada
 
   sustractc ::  V.Vector BiDay -> V.Vector BiDay -> V.Vector BiDay
-  sustractc v1 v2
-    | (v1==V.empty) && (v2==V.empty)        = V.empty
-    | (v1/=V.empty) && (v2==V.empty)        = v1
-    | (v1==V.empty) && (v2/=V.empty)        = v2
-    | otherwise                               = V.zipWith sustract_ v1 v2
+  sustractc = applyOperator sustract_
 
   -- | Join de DaysCalendar basado en el operador DcAdd
   add :: DaysCalendar BiDay -> DaysCalendar BiDay -> DaysCalendar BiDay
@@ -511,13 +521,9 @@ fromDates
     | bd1==0 && bd2==1  = 1
     | bd1==0 && bd2==0  = 0
 
-  addc ::  V.Vector BiDay -> V.Vector BiDay -> V.Vector BiDay
-  addc v1 v2
-    | (v1==V.empty) && (v2==V.empty)        = V.empty
-    | (v1/=V.empty) && (v2==V.empty)        = v1
-    | (v1==V.empty) && (v2/=V.empty)        = v2
-    | otherwise                             = V.zipWith add_ v1 v2
-  
+  addc :: V.Vector BiDay -> V.Vector BiDay -> V.Vector BiDay
+  addc = applyOperator add_
+
   -- | Gets the mismatched items (or holes) between two 'DaysCalendar' types
   holes :: DaysCalendar BiDay -> DaysCalendar BiDay -> DaysCalendar BiDay
   holes dc1 dc2 = invert $ add dc1 dc2
@@ -529,11 +535,11 @@ fromDates
 
   -- | Obtiene el índice weekDay del primer día del mes dado
   -- @
-  --  fstWeekDay 2017 3 == 3 --El último día de la semana del mes 03/2017 es Miercoles
+  --  firstWeekDay 2017 3 == 3 --El último día de la semana del mes 03/2017 es Miercoles
   -- @
   --
-  fstWeekDay :: YearCalendar -> MonthCalendar -> WeekDay
-  fstWeekDay y m = read $ formatTime defaultTimeLocale "%u" t
+  firstWeekDay :: YearCalendar -> MonthCalendar -> WeekDay
+  firstWeekDay y m = read $ formatTime defaultTimeLocale "%u" t
     where t = makeUtcTime y m 1 0 0 0
 
   -- | Obtiene el índice weekDay del último día del mes dado
@@ -594,10 +600,10 @@ fromDates
   toDates dc = ans''
     where
       dc' = normalize dc
-      uym = extractYearsMonthCalendar dc'
+      uym = eymc dc'
 
       ans = fmap (\(y,m) -> do
-        let d = extractDaysOfMonthCalendar y m dc'
+        let d = edmc y m dc'
         let dd = fmap (\i -> biDay2IdDay i) d
         let dy = fmap (\x -> idDay2Day y m x) dd
         dy
@@ -611,7 +617,7 @@ fromDates
   fromDates d = normalize $ DaysCalendar dd
     where
       gd = fmap toGregorian d
-      uym = nub $ fmap (\(x,m,d) -> (x,m)) gd
+      uym = nub $ fmap (\(x,m,_) -> (x,m)) gd
       dd = fmap (\(y', m') -> do
           let ci = V.filter (/=0) $ (fmap (\(y,m,x) -> if (y==y' && m==m') then x::IdDay else 0::IdDay) gd)
           let ct = (y'::YearCalendar, m'::MonthCalendar, idDay2BiDay ci)
@@ -656,11 +662,7 @@ fromDates
 
   --Operación AND atómica de [BiDay]
   anddc ::  V.Vector BiDay -> V.Vector BiDay -> V.Vector BiDay
-  anddc dc1 dc2
-    | (dc1==V.empty) && (dc2==V.empty)        = V.empty
-    | (dc1/=V.empty) && (dc2==V.empty)        = dc1
-    | (dc1==V.empty) && (dc2/=V.empty)        = dc2
-    | otherwise                               = V.zipWith anddc_ dc1 dc2
+  anddc = applyOperator anddc_
 
   -- | Operador AND
   anddc_ ::  BiDay -> BiDay -> BiDay
