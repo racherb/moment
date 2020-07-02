@@ -16,7 +16,7 @@ Moment.Types
 
 module Moment.Types where
 
-  import Data.Monoid
+  import Moment.Prelude
 
   type YearCalendar = Integer
   type MonthCalendar = Int

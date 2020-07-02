@@ -30,18 +30,21 @@ For example:
 -- ! This module is internal and it is not recommended to use it directly. Use DaysCalendar instead.
 
 {-# OPTIONS_GHC -fwarn-missing-signatures #-}
-{-# OPTIONS_GHC -fwarn-unused-imports #-}
-{-# OPTIONS_GHC -fwarn-unused-binds #-}
-{-# OPTIONS_GHC -fwarn-unused-do-bind #-}
-{-# OPTIONS_GHC -fwarn-wrong-do-bind #-}
-{-# OPTIONS_GHC -fwarn-unused-matches #-}
-{-# OPTIONS_GHC -fwarn-dodgy-exports #-}
-{-# OPTIONS_GHC -fwarn-dodgy-imports #-}
-{-# OPTIONS_GHC -fwarn-identities #-}
+{-# OPTIONS_GHC -fwarn-unused-imports     #-}
+{-# OPTIONS_GHC -fwarn-unused-binds       #-}
+{-# OPTIONS_GHC -fwarn-unused-do-bind     #-}
+{-# OPTIONS_GHC -fwarn-wrong-do-bind      #-}
+{-# OPTIONS_GHC -fwarn-unused-matches     #-}
+{-# OPTIONS_GHC -fwarn-dodgy-exports      #-}
+{-# OPTIONS_GHC -fwarn-dodgy-imports      #-}
+{-# OPTIONS_GHC -fwarn-identities         #-}
 
-{-# LANGUAGE ScopedTypeVariables, FlexibleContexts, MonoLocalBinds  #-}
+{-# LANGUAGE NoImplicitPrelude       #-}
+{-# LANGUAGE ScopedTypeVariables     #-}
+{-# LANGUAGE FlexibleContexts        #-}
+{-# LANGUAGE MonoLocalBinds          #-}
 
-module Moment.Calendar.Internals (
+module Moment.Calendar.Internals {-# WARNING "This is an internal module and is in the process of optimization." #-}(
 -- * Types
 Day,
 DaysCalendar(..),
@@ -81,8 +84,8 @@ toDates,
 fromDates
 
 ) where
-
-  import Prelude hiding (or, and, reverse)
+  
+  import Moment.Prelude
   import Data.Vector ((!))
   import qualified Data.Vector as V
   import qualified Data.Vector.Algorithms.Merge as V (sort)
@@ -108,6 +111,7 @@ fromDates
   
   -- | Return the empty 'DaysCalendar' type element
   empty :: DaysCalendar a
+  {-# INLINE empty #-}
   empty = DaysCalendar V.empty
 
   -- | Returns the unique elements of a vector
@@ -128,6 +132,7 @@ fromDates
 
   -- | Create a 'DaysCalendar' type from an arbitrary minimum expression
   singleton :: (YearCalendar, MonthCalendar, V.Vector a) -> DaysCalendar a
+  {-# INLINE singleton #-}
   singleton x = DaysCalendar $ V.singleton x
   
   -- | Semigroup instance of type 'DaysCalendar'
@@ -197,6 +202,7 @@ fromDates
  -- | Extract every single year and month from a 'DaysCalendar'
  -- eymc: extractYearsMonthCalendar
   eymc :: DaysCalendar a -> V.Vector (YearCalendar, MonthCalendar)
+  {-# INLINE eymc #-}
   eymc (DaysCalendar d) = sort . nub $ fmap tft3 d
 
   -- | Extract all the months contained in a calendar year of 'DaysCalendar'
@@ -210,7 +216,7 @@ fromDates
   -- | It extracts all the defined calendar days for a given calendar year and month.
   -- edmc: extractDaysOfMonthCalendar
   edmc :: (Eq a) => YearCalendar -> MonthCalendar -> DaysCalendar a ->  V.Vector (V.Vector a)
-  edmc year month dayscal = nub $ fmap (thr3) mcal
+  edmc year month dayscal = nub $ fmap thr3 mcal
     where
         mcal = unDaysCalendar $ qmonthc year month dayscal
 
@@ -253,6 +259,7 @@ fromDates
   -- | Resume or normalize the elements of a given DaysCalendar type.
   -- It is an application of the function 'resume' with 'DcOr' method.
   normalize :: DaysCalendar BiDay -> DaysCalendar BiDay
+  {-# INLINE normalize #-}
   normalize = resume DcOr
 
   -- | Merges the elements of DaysCalendar based on the AND operator.
@@ -283,6 +290,7 @@ fromDates
   -- k es el valor de los nuevos elementos
   -- v es el vector de BiDay
   fullyd_ :: Int -> BiDay -> V.Vector BiDay -> V.Vector BiDay
+  {-# INLINE fullyd_ #-}
   fullyd_ n k v = case compare ni 0 of
                         EQ -> v
                         LT -> V.take n v
@@ -434,6 +442,7 @@ fromDates
 
   -- | Folds the items on a list according to the calendar operator to be applied  --En este caso ajoinc
   resumeItself ::  V.Vector BiDay -> Int -> V.Vector (V.Vector BiDay) -> DaysCalendarOp -> V.Vector BiDay
+  {-# INLINE resumeItself #-}
   resumeItself acc nd vv mth = case lwe of
                                   0 -> acc
                                   1 -> rsi (V.head vv)
@@ -451,6 +460,7 @@ fromDates
   -- | Applies the operator function 'h' between two types 'DaysCalendar 
   --{-# INLINE applyOperator #-}
   applyOperator :: Eq b => (b -> b -> b) -> V.Vector b -> V.Vector b -> V.Vector b
+  {-# INLINE applyOperator #-}
   applyOperator h v1 v2
     | (v1==V.empty) && (v2==V.empty)        = V.empty
     | (v1/=V.empty) && (v2==V.empty)        = v1
@@ -593,10 +603,12 @@ fromDates
 
   -- | Genera una fecha de tipo Day
   toDay :: YearCalendar -> MonthCalendar -> IdDay -> Day
+  {-# INLINE toDay #-}
   toDay y m d = utctDay $ makeUtcTime y m d 0 0 0
 
   -- | Convierte a fechas un vector de DaysCalendar
   toDates :: DaysCalendar BiDay -> V.Vector Day
+  {-# INLINE toDates #-}
   toDates dc = ans''
     where
       dc' = normalize dc

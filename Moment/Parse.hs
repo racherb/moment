@@ -22,11 +22,13 @@ module Moment.Parse(currentTime,
   extractDay,
   makeUtcTime) where
 
+  import Moment.Prelude
+
   import Data.Time
   import Data.Time.Format
   import Data.Time.Calendar
   import Data.Fixed
-  --import System.Locale (defaultTimeLocale)
+
   import System.Posix.Unistd
   import Moment.Types(Date)
 

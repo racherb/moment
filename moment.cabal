@@ -26,17 +26,18 @@ library
                        Moment.Calendar.DaysCalendar
 
   -- Modules included in this library but not exported.
-  other-modules:       Moment.Types,
+  other-modules:       Moment.Prelude,
+                       Moment.Types,
                        Moment.Parse
 
   -- LANGUAGE extensions used by modules in this package.
   --other-extensions:    GADTs, DeriveFunctor
 
   -- Other library packages from which modules are imported.
-  build-depends:       base >=4.12 && <4.15,
-                       time >=1.8.0 && <1.9.4,
-                       unix >=2.7.2 && <2.8,
-                       vector >=0.12.0 && < 0.12.1,
+  build-depends:       base              >=4.12   && <4.15,
+                       time              >=1.8    && <1.9.4,
+                       unix              >=2.7.2  && <2.8,
+                       vector            >=0.12.0 && < 0.12.1,
                        vector-algorithms >= 0.8.0 && < 0.8.0.4
 
   -- Directories containing source files.
@@ -45,4 +46,7 @@ library
   default-language:    Haskell2010
 
   ghc-options:         -Wall
+
+  default-extensions:
+                       NoImplicitPrelude
 
