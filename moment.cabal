@@ -47,6 +47,5 @@ library
 
   ghc-options:         -Wall
 
-  default-extensions:
-                       NoImplicitPrelude
+  default-extensions:  NoImplicitPrelude
 
