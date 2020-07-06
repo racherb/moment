@@ -18,6 +18,9 @@ flag documentation
 
 library
 
+  hs-source-dirs:
+      src
+
   if flag(documentation)
       build-depends: hscolour == 1.24.*
 
@@ -49,3 +52,18 @@ library
 
   default-extensions:  NoImplicitPrelude
 
+test-suite spec
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  hs-source-dirs:
+      test
+  ghc-options: -Wall
+  build-depends:
+      base ==4.*
+    , hspec ==2.*
+    , vector ==0.12.*
+    , moment
+  other-modules:
+      Moment.Calendar.DaysCalendarSpec
+  default-language: Haskell2010
+  build-tool-depends: hspec-discover:hspec-discover == 2.*
