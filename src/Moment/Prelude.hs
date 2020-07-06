@@ -31,7 +31,6 @@ import Prelude as Exports (
     Functor(..)
     )
 
---import Data.Int as Exports
 import Data.Tuple as Exports
 import Data.Maybe as Exports
 import Data.String as Exports

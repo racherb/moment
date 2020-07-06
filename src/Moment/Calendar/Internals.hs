@@ -61,6 +61,8 @@ singleton,
 ones,
 ceros,
 step,
+pulse,
+section,
 replica,
 -- * Queries
 qyearc,
@@ -78,6 +80,14 @@ sustract,
 normalize,
 holes,
 match,
+move,
+reverse,
+oddd,
+evend,
+dropydc,
+dropmdc,
+dropymdc,
+
 -- * Conversion
 toDay,
 toDates,
@@ -92,19 +102,19 @@ fromDates
   import Data.Time (formatTime, defaultTimeLocale, Day, toGregorian, addDays, utctDay, gregorianMonthLength)
   import qualified Control.Monad.ST as ST
 
-  import Moment.Parse (makeUtcTime, extractYear, extractMonth, extractDay)
+  import Moment.Parse --(makeUtcTime, extractYear, extractMonth, extractDay)
   
   -- * Important information
   -- ! Deprecated function, do not use
   -- ? Expose in API?
   -- TODO: Refactor this method
 
-  type YearCalendar = Integer
-  type MonthCalendar = Int
-  type WeekDay = Int
-  type WeekMonth = Int
-  type BiDay = Int
-  type IdDay = Int
+  type YearCalendar = Integer    -- ^ Calendar year, 2020
+  type MonthCalendar = Int       -- ^ Month Calendar 1..12
+  type WeekDay = Int             -- ^ Week day index 1..7
+  type WeekMonth = Int           -- ^ Week month
+  type BiDay = Int               -- ^ Binary Day 0..1
+  type IdDay = Int               -- ^ Index Day
   
   -- | newtype DaysCalendar a = DaysCalendar {unDaysCalendar :: V.Vector (YearCalendar, MonthCalendar, V.Vector a)} deriving (Show, Eq, Read)
   newtype DaysCalendar a = DaysCalendar {unDaysCalendar :: V.Vector (YearCalendar, MonthCalendar, V.Vector a)} deriving (Show, Eq, Read)
@@ -164,7 +174,7 @@ fromDates
           v = unDaysCalendar dayscal
           lenyc = V.length v
           qyearc' :: (YearCalendar, MonthCalendar, V.Vector a) -> YearCalendar-> DaysCalendar a
-          qyearc' tdc yyyy = ans
+          qyearc' tdc _ = ans
               where
                   ans = if (year==fst3 tdc) then singleton tdc else empty
 
@@ -190,7 +200,7 @@ fromDates
           qmonthc' :: (YearCalendar, MonthCalendar, V.Vector a) -> YearCalendar -> MonthCalendar -> DaysCalendar a
           qmonthc' tdc yyyy mm = ans
               where
-                  ans = if (yyyy==(fst3 tdc) && mm==(snd3 tdc)) then singleton tdc else empty
+                  ans = if yyyy==fst3 tdc && mm==snd3 tdc then singleton tdc else empty
 
   -- | Extract every year you present at a given DaysCalendar
   -- Returns an ordered list of unique items
@@ -248,7 +258,7 @@ fromDates
           resumeYm tym = case lend of
                               0 -> empty
                               1 -> singleton (y, m, fullyd_ nd 0 $ V.head qymd)
-                              _ -> singleton $ (y, m, resumeItself V.empty nd qymd mth)
+                              _ -> singleton (y, m, resumeItself V.empty nd qymd mth)
             where
               qymd = edmc y m dc
               lend = V.length qymd
@@ -326,22 +336,25 @@ fromDates
   step_ _ _ 0 = V.empty
   step_ v s n = replica_ n pattrn
     where
-      pattrn = (replicate s v) <> replicate s (invert_ v)
+      pattrn = replicate s v <> replicate s (invert_ v)
 
   -- | Generates a step with 'v' 's' 'n' features throughout 'DaysCalendar'
   -- 'v' is the initial value of the step (0 or 1)
   -- 's' is the step
   -- 'n' is the number of values to be generated
   step :: BiDay -> Int -> Int -> DaysCalendar a -> DaysCalendar BiDay
-  step v s n dc = normalize $ DaysCalendar (fmap (\(x,y,d) -> (x,y, step_ v s n)) (unDaysCalendar dc))
+  step v s n dc = normalize $ DaysCalendar (fmap (\(x,y,_) -> (x,y, step_ v s n)) (unDaysCalendar dc))
 
   -- | Step step starting with values 1
-  stepones_ ::  Int -> Int -> V.Vector BiDay
-  stepones_ = step_ 1
+  --stepones_ ::  Int -> Int -> V.Vector BiDay
+  --stepones_ = step_ 1
 
   -- | Step step starting with values 0
-  stepceros_ :: Int -> Int -> V.Vector BiDay
-  stepceros_ = step_ 0
+  --stepceros_ :: Int -> Int -> V.Vector BiDay
+  --stepceros_ = step_ 0
+
+  pulse :: BiDay -> Int -> Int -> Int -> DaysCalendar a -> DaysCalendar BiDay
+  pulse s f p n dc = normalize $ DaysCalendar (fmap (\(x,y,_) -> (x,y, pulse_ s f p n)) (unDaysCalendar dc))
 
   -- | Pulse length 'n' value 's' with frequency 'f' from position 'p
   -- 's' is the value of the signal or pulse
@@ -360,16 +373,19 @@ fromDates
       ans = update_ frc s vb
 
   -- | Unitary pulse, the signal 's' appears only once along the resulting vector
-  pulse1_ :: (Num Int) => BiDay -> Int -> Int -> V.Vector BiDay
-  pulse1_ s p n = pulse_ s 0 p n
+  --pulse1_ :: (Num Int) => BiDay -> Int -> Int -> V.Vector BiDay
+  --pulse1_ s p n = pulse_ s 0 p n
+
+  section :: BiDay -> (IdDay, IdDay) -> Int -> DaysCalendar a -> DaysCalendar BiDay
+  section v (ti, te) n dc = normalize $ DaysCalendar (fmap (\(x,y,_) -> (x,y, section_ v (ti, te) n)) (unDaysCalendar dc))
 
   -- | Function defined by sections
   -- 'v' is the value of the leg
   -- 't' is the tuple with the stretch (from, to)
   -- 'n' is the final size of the leg vector
   --section_ :: (Num idDay2BiDay) => BiDay -> (IdDay, IdDay) -> Int -> V.Vector BiDay
-  section_ :: BiDay -> (Int, Int) -> Int -> V.Vector BiDay
-  section_ v t 0 = V.empty
+  section_ :: BiDay -> (IdDay, IdDay) -> Int -> V.Vector BiDay
+  section_ _ _ 0 = V.empty
   section_ v (ti, tf) n = case compare (tf - ti) 0 of
                                 EQ -> pulse_ v 0 tf n
                                 LT -> V.empty
@@ -379,45 +395,48 @@ fromDates
       gta = update_ [ti..tf] v vb
 
   -- | Build a vector with the 'IdDay' frequency distribution
-  mkDfrec :: (Num Int) => BiDay -> Int -> Int -> [IdDay]
-  mkDfrec p 0 n = [p] --If the frequency is 0 then return the position
-  mkDfrec p f 0 = []  --If the resulting sample size is 0
-  mkDfrec p f n = takeWhile (<=n) $ scanl (\acc x -> acc+f) p stl
+  mkDfrec :: BiDay -> Int -> Int -> [IdDay]
+  mkDfrec p 0 _ = [p] --If the frequency is 0 then return the position
+  mkDfrec _ _ 0 = []  --If the resulting sample size is 0
+  mkDfrec p f n = takeWhile (<=n) $ scanl (\acc _ -> acc+f) p stl
     where
-      stl = replicate ((div n f)+1) 0
+      stl = replicate ((div n f)+1) r
+      r :: IdDay
+      r = 0
 
   -- | Return 'DaysCalendar' with the odd days of the 'DaysCalendar' entry
   -- 9999 12 31 as infinite
   oddd :: DaysCalendar BiDay -> DaysCalendar BiDay
-  oddd dc = fromDates $ V.filter (/=(toDay 9999 12 31)) odds
+  oddd dc = fromDates $ V.filter (/= toDay 9999 12 31) odds
     where
       dt = toDates dc
-      odds = fmap (\x -> if (odd $ thr3 (toGregorian x)) then x else (toDay 9999 12 31)) dt
+      odds = fmap (\x -> if odd $ thr3 (toGregorian x) then x else toDay 9999 12 31) dt
 
   -- | Return 'DaysCalendar' with even numbered days from the 'DaysCalendar' entry
   evend :: DaysCalendar BiDay -> DaysCalendar BiDay
-  evend dc = fromDates $ V.filter (/=(toDay 9999 12 31)) odds
+  evend dc = fromDates $ V.filter (/= toDay 9999 12 31) odds
     where
       dt = toDates dc
-      odds = fmap (\x -> if (even $ thr3 (toGregorian x)) then x else (toDay 9999 12 31)) dt
+      odds = fmap (\x -> if even $ thr3 (toGregorian x) then x else toDay 9999 12 31) dt
 
   -- | Replicates 'n' times the pattern 'p' within the 'DaysCalendar
   -- The pattern is a 'BiDay' type list
   replica :: Int -> [BiDay] -> DaysCalendar BiDay -> DaysCalendar BiDay
-  replica n p dc = normalize $ DaysCalendar (fmap (\(x,y,d) -> (x,y, replica_ n p)) (unDaysCalendar dc))
+  replica n p dc = normalize $ DaysCalendar (fmap (\(x,y,_) -> (x,y, replica_ n p)) (unDaysCalendar dc))
 
   -- | Replica el patrón p hasta obtener un vector de BiDay de longitud n
   replica_ :: Int -> [BiDay] -> V.Vector BiDay
   replica_ n p = if null p || n == 0 then V.empty else ans
     where
       ans = V.fromList . take n $ concat (replicate m p)
+      m' :: Integral c => c
       m' = ceiling . fromIntegral $ quot n (length p)
       m = if m' == 0 then 1 else m' + 1
 
-  -- | Proyecta un vector finito sobre todo DaysCalendar
+  -- | Projects a finite vector on all DaysCalendar
   --TODO: Implementar
-  projection :: V.Vector BiDay -> DaysCalendar BiDay -> DaysCalendar BiDay
-  projection vd dc = empty
+  --projection :: V.Vector BiDay -> DaysCalendar BiDay -> DaysCalendar BiDay
+  --projection vd dc = empty
 
   mkIdDays_ :: YearCalendar -> MonthCalendar -> V.Vector IdDay
   mkIdDays_ y m = V.fromList [1..(nDays y m)]
@@ -569,12 +588,12 @@ fromDates
     where t = makeUtcTime y m d 0 0 0
 
   --weekMonthIndex :: (Num Int) => YearCalendar -> MonthCalendar -> IdDay -> Maybe Int
-  weekMonthIndex :: YearCalendar -> MonthCalendar -> IdDay -> [WeekMonth]
-  weekMonthIndex y m d = rf --lookup ws rf
+  --weekMonthIndex :: YearCalendar -> MonthCalendar -> IdDay -> [WeekMonth]
+  weekMonthIndex y m d = rf --lookup ws rf --TODO: Terminar esto
     where
       ws = read (formatTime defaultTimeLocale "%V" (makeUtcTime y m d 0 0 0))::WeekMonth
       fw m' d' = read (formatTime defaultTimeLocale "%V" (makeUtcTime y m' d' 0 0 0))::WeekMonth
-      rf = fmap (\x -> fw m x) [1..(nDays y m)] --[(w1, 1), (w1+1, 2), (w1+2, 3), (w1+3, 4)]
+      rf = fmap (fw m) [1..(nDays y m)] --[(w1, 1), (w1+1, 2), (w1+2, 3), (w1+3, 4)]
 
   -- | Obtiene una lista con todos los valores de índices weeDay de un intervalo dado de [DayCalendar]
   -- @
@@ -599,7 +618,7 @@ fromDates
         d = biDay2IdDay v
         nd = nDays y m
         nw = fmap (+n) d
-        ans = V.fromList $ fmap (\x -> if (x `elem` nw) then 1 else 0) [1..nd]
+        ans = V.fromList $ fmap (\x -> if x `elem` nw then 1 else 0) [1..nd]
 
   -- | Genera una fecha de tipo Day
   toDay :: YearCalendar -> MonthCalendar -> IdDay -> Day
