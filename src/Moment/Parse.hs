@@ -25,28 +25,23 @@ module Moment.Parse(currentTime,
   import Moment.Prelude
 
   import Data.Time
-  import Data.Time.Format
-  import Data.Time.Calendar
   import Data.Fixed
 
-  import System.Posix.Unistd
   import Moment.Types(Date)
 
-  --Fecha y hora actual del sistema
+  -- | Current system date and time
   currentTime :: IO UTCTime
   currentTime = getCurrentTime
 
-  --Fecha y hora actual del sistema en formato IO String
+  -- | Current system date and time in IO String format
   currentTimeStrIO :: IO String
   currentTimeStrIO = fmap show currentTime
 
   --Fecha y hora del sistema en formato String
-  --currentTimeStr :: String
-  currentTimeStr = do
-    strVal <- currentTimeStrIO
-    return strVal
+  currentTimeStr :: IO String
+  currentTimeStr = currentTimeStrIO
 
-  --Formateo de fechas
+  -- | Date Formatting
   --TODO: Generalizar expresión usando patrones (regexp)
   --"%Y-%m-%d"
   format :: FormatTime t => [Char] -> t -> String
@@ -65,38 +60,37 @@ module Moment.Parse(currentTime,
       applyFormat fmt = formatTime defaultTimeLocale fmt udt
 
 
-  --Convierte un string a un tipo de fecha de formato establecido
+  -- | Converts a string to a set format fmt date type
   --Formato YYYYMMDD = "%Y%m%d"
   --Prj: stringToDate "20150511" "%Y%m%d" -> 2015-05-11 00:00:00 UTC
-  --TODO: readTime está obsoleto: Buscar alternativa
   stringToDate :: String -> String -> UTCTime
-  stringToDate input format = readTime defaultTimeLocale format input :: UTCTime
+  stringToDate input fmt = parseTimeOrError True defaultTimeLocale fmt input :: UTCTime
 
   makeUtcTime :: Integer -> Int -> Int -> Int -> Int -> Pico -> UTCTime
   makeUtcTime yyyy mm dd h24 mi ps = UTCTime { utctDay = fromGregorian yyyy mm dd,
                           utctDayTime = timeOfDayToTime (TimeOfDay h24 mi ps)
                         }
 
-  --Extrae el año de una fecha dada en formato YYYYMMDD
+  -- | Extracts the year from a given date in YYYYMMDD format
   extractYear :: Date -> Maybe Int
   extractYear date
-    | (length date >= 4)    = Just (read (take 4 date)::Int)
+    | length date >= 4      = Just (read (take 4 date)::Int)
     | otherwise             = Nothing
 
-  --Extrae el mes de una fecha dada en formato YYYYMMDD
+  --  | Extracts the month from a given date in YYYYMMDD format
   extractMonth :: Date -> Maybe Int
   extractMonth date
-    | length date >= 6    = Just month
+    | length date >= 6      = Just month
     | otherwise             = Nothing
     where
         md = drop 4 date
         month = read (take 2 md)::Int
 
-  --Extrae el dia de una fecha dada en dormato YYYYMMDD
+  -- | Extracts the day of a given date in YYYYMMDD format
   extractDay :: Date -> Maybe Int
   extractDay date
-    | (length date == 8)        = Just (read(drop 6 date)::Int)
-    | otherwise                 = Nothing
+    | length date == 8      = Just (read(drop 6 date)::Int)
+    | otherwise             = Nothing
 
 
   {-
