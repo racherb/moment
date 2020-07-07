@@ -12,13 +12,13 @@ Portability :  non-portable
 For example:
 
 @
-  oc = ceros $ singleton (2019, 12, V.fromList []) 
+  oc = zeros $ singleton (2019, 12, V.fromList []) 
   jc = ones $ singleton (2020, 1, V.fromList [])
   fc = step 1 1 30 $ singleton (2020, 2, V.fromList [])
   
   dc = oc <> jc <> fc
 
-  ac = mkDaysCalendar 2020 03 (V.fromList [1,1,1,0,1])
+  ac = make 2020 03 (V.fromList [1,1,1,0,1])
   
   de = DaysCalendar $ V.fromList [(2016,12, V.fromList [1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0])]
   
@@ -58,8 +58,9 @@ sort,
 -- * Constructors
 empty,
 singleton,
+make,
 ones,
-ceros,
+zeros,
 step,
 pulse,
 section,
@@ -318,13 +319,13 @@ fromDates
   ones_ n = V.replicate n 1
 
   -- | Uncheck (or replace) all DaysCalendar items with 0 values
-  ceros :: DaysCalendar a -> DaysCalendar BiDay
-  ceros dc = DaysCalendar $ fmap (\(x,y) -> (x,y, ceros_ $ nDays x y)) uqy
+  zeros :: DaysCalendar a -> DaysCalendar BiDay
+  zeros dc = DaysCalendar $ fmap (\(x,y) -> (x,y, zeros_ $ nDays x y)) uqy
     where
       uqy = eymc dc
 
-  ceros_ :: Int -> V.Vector BiDay
-  ceros_ n = V.replicate n 0
+  zeros_ :: Int -> V.Vector BiDay
+  zeros_ n = V.replicate n 0
 
   -- | Función paso escalón
   -- p.ej.: step_ 2 10 1 genera -> [1,1,0,0,1,1,0,0,1,1]
@@ -350,8 +351,8 @@ fromDates
   --stepones_ = step_ 1
 
   -- | Step step starting with values 0
-  --stepceros_ :: Int -> Int -> V.Vector BiDay
-  --stepceros_ = step_ 0
+  --stepzeros_ :: Int -> Int -> V.Vector BiDay
+  --stepzeros_ = step_ 0
 
   pulse :: BiDay -> Int -> Int -> Int -> DaysCalendar a -> DaysCalendar BiDay
   pulse s f p n dc = normalize $ DaysCalendar (fmap (\(x,y,_) -> (x,y, pulse_ s f p n)) (unDaysCalendar dc))
@@ -443,11 +444,11 @@ fromDates
 
   -- | Build a DaysCalendar type
   -- @
-  --    mkDaysCalendar 2017 4 (step_ 1 2 9)
+  --    make 2017 4 (step_ 1 2 9)
   --
   -- @
-  mkDaysCalendar :: YearCalendar -> MonthCalendar -> V.Vector BiDay -> DaysCalendar BiDay
-  mkDaysCalendar y m k = normalize . singleton $ (y, m, k)
+  make :: YearCalendar -> MonthCalendar -> V.Vector BiDay -> DaysCalendar BiDay
+  make y m k = normalize . singleton $ (y, m, k)
 
 
   -- | DaysCalendar Operator Type
@@ -673,7 +674,7 @@ fromDates
   idDay2BiDay v = foldr (\x acc -> (V.update acc (V.singleton ((decreaseOne x)::Int, 1)))) ini vi'
     where
       vi' = nub $ sort v
-      ini = ceros_ $ V.maximum vi' --NOTE: El máximo está acotado el mayor elemento, sin embargo, considere nDays
+      ini = zeros_ $ V.maximum vi' --NOTE: El máximo está acotado el mayor elemento, sin embargo, considere nDays
 
   --Conviete una lista de dias calendario a una lista de índices de lista
   biDay2IdDay :: V.Vector BiDay -> V.Vector IdDay
