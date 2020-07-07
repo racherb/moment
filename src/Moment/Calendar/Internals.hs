@@ -29,22 +29,12 @@ For example:
 -- | The 'DaysCalendar' module allows advanced operations on calendar days in a simple and readable way, facilitating the scheduling and the elaboration of new calendar specifications.
 -- ! This module is internal and it is not recommended to use it directly. Use DaysCalendar instead.
 
-{-# OPTIONS_GHC -fwarn-missing-signatures #-}
-{-# OPTIONS_GHC -fwarn-unused-imports     #-}
-{-# OPTIONS_GHC -fwarn-unused-binds       #-}
-{-# OPTIONS_GHC -fwarn-unused-do-bind     #-}
-{-# OPTIONS_GHC -fwarn-wrong-do-bind      #-}
-{-# OPTIONS_GHC -fwarn-unused-matches     #-}
-{-# OPTIONS_GHC -fwarn-dodgy-exports      #-}
-{-# OPTIONS_GHC -fwarn-dodgy-imports      #-}
-{-# OPTIONS_GHC -fwarn-identities         #-}
-
 {-# LANGUAGE NoImplicitPrelude       #-}
 {-# LANGUAGE ScopedTypeVariables     #-}
 {-# LANGUAGE FlexibleContexts        #-}
 {-# LANGUAGE MonoLocalBinds          #-}
 
-module Moment.Calendar.Internals {-# WARNING "This is an internal module and is in the process of optimization." #-}(
+module Moment.Calendar.Internals (
 -- * Types
 Day,
 DaysCalendar(..),
@@ -563,18 +553,18 @@ fromDates
     where
         wdi = weekDayIndexes y m
 
-  -- | Obtiene el índice weekDay del primer día del mes dado
+  -- | Get the weekDay index for the first day of the given month
   -- @
-  --  firstWeekDay 2017 3 == 3 --El último día de la semana del mes 03/2017 es Miercoles
+  --  firstWeekDay 2017 3 == 3 --The last day of the week for the month 03/2017 is Wednesday
   -- @
   --
   firstWeekDay :: YearCalendar -> MonthCalendar -> WeekDay
   firstWeekDay y m = read $ formatTime defaultTimeLocale "%u" t
     where t = makeUtcTime y m 1 0 0 0
 
-  -- | Obtiene el índice weekDay del último día del mes dado
+  -- | Get the weekDay index for the last day of the given month
   -- @
-  --  lastWeekDay 2017 3 == 5 --El último día de la semana del mes 03/2017 es Viernes
+  --  lastWeekDay 2017 3 == 5 --The last day of the week for the month 03/2017 is Friday
   -- @
   --
   lastWeekDay :: YearCalendar -> MonthCalendar -> WeekDay
@@ -583,25 +573,26 @@ fromDates
       t = makeUtcTime y m u 0 0 0
       u = nDays y m
 
-  -- | Obtiene el índice weekDay del día calendario dado
+  -- | Get the weekDay index for the given calendar day
   weekDayIndex :: YearCalendar -> MonthCalendar -> IdDay -> WeekDay
-  weekDayIndex y m d = read $ (formatTime defaultTimeLocale "%u" t)::WeekDay
+  weekDayIndex y m d = read (formatTime defaultTimeLocale "%u" t)::WeekDay
     where t = makeUtcTime y m d 0 0 0
 
-  --weekMonthIndex :: (Num Int) => YearCalendar -> MonthCalendar -> IdDay -> Maybe Int
-  --weekMonthIndex :: YearCalendar -> MonthCalendar -> IdDay -> [WeekMonth]
-  weekMonthIndex y m d = rf --lookup ws rf --TODO: Terminar esto
-    where
-      ws = read (formatTime defaultTimeLocale "%V" (makeUtcTime y m d 0 0 0))::WeekMonth
-      fw m' d' = read (formatTime defaultTimeLocale "%V" (makeUtcTime y m' d' 0 0 0))::WeekMonth
-      rf = fmap (fw m) [1..(nDays y m)] --[(w1, 1), (w1+1, 2), (w1+2, 3), (w1+3, 4)]
-
-  -- | Obtiene una lista con todos los valores de índices weeDay de un intervalo dado de [DayCalendar]
+  -- | Gets a vector with all the weeDay index values for a given month
   -- @
   --  weekDayIndexes 2017 1
   -- @
   weekDayIndexes :: YearCalendar -> MonthCalendar -> V.Vector IdDay
   weekDayIndexes y m = fmap (weekDayIndex y m) dd where dd = mkIdDays_ y m
+
+  {- --TODO: Terminar esto
+  --weekMonthIndex :: (Num Int) => YearCalendar -> MonthCalendar -> IdDay -> Maybe Int
+  weekMonthIndex y m d = rf --lookup ws rf
+    where
+      ws = read (formatTime defaultTimeLocale "%V" (makeUtcTime y m d 0 0 0))::WeekMonth
+      fw m' d' = read (formatTime defaultTimeLocale "%V" (makeUtcTime y m' d' 0 0 0))::WeekMonth
+      rf = fmap (fw m) [1..(nDays y m)] --[(w1, 1), (w1+1, 2), (w1+2, 3), (w1+3, 4)]
+  -}
 
   --Suma o resta días a una determinada lista de fechas en formato [Day]
   --moveDays (1) [2016-01-02,2016-01-03,2016-01-06,2016-01-07,2016-01-10,2016-01-11,2016-01-14,2016-01-15,2016-01-18,2016-01-19,2016-01-22,2016-01-23,2016-01-26,2016-01-27,2016-01-30,2016-01-31]
