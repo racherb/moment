@@ -1,4 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE CPP               #-}
 
 module Moment.Prelude (
   module Exports
@@ -26,8 +27,6 @@ import Prelude as Exports (
     fromIntegral,
     ceiling,
     quot,
-    Monoid(..),
-    Semigroup(..),
     Functor(..)
     )
 
@@ -49,6 +48,9 @@ import Data.Char    as Exports (Char)
 -- Base typeclasses
 import Data.Eq as Exports
 import Data.Ord as Exports
+#if MIN_VERSION_base(4,9,0)
 import Data.Monoid as Exports (Monoid(..), mempty)
 import Data.Semigroup as Exports (Semigroup(..), (<>))
-import Data.Functor.Identity as Exports
+#else
+import Data.Monoid as Exports (Monoid(..), mempty, (<>))
+#endif

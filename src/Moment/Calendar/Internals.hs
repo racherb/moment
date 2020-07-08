@@ -33,6 +33,9 @@ For example:
 {-# LANGUAGE ScopedTypeVariables     #-}
 {-# LANGUAGE FlexibleContexts        #-}
 {-# LANGUAGE MonoLocalBinds          #-}
+{-# LANGUAGE CPP                     #-}
+
+--{-# OPTIONS_GHC -fwarn-missing-signatures #-}
 
 module Moment.Calendar.Internals (
 -- * Types
@@ -136,14 +139,20 @@ fromDates
   {-# INLINE singleton #-}
   singleton x = DaysCalendar $ V.singleton x
   
+#if MIN_VERSION_base(4,9,0)
   -- | Semigroup instance of type 'DaysCalendar'
+  -- Since: base 4.9.0.0
   instance Semigroup (DaysCalendar a) where
     (DaysCalendar a) <> (DaysCalendar b) = DaysCalendar (a V.++ b)
 
   -- | Monoid instance of type 'DaysCalendar'
   instance Monoid (DaysCalendar a) where
     mempty = empty
-
+#else
+  instance Monoid (DaysCalendar a) where
+    mempty = empty
+    (DaysCalendar a) <> (DaysCalendar b) = DaysCalendar (a V.++ b)
+#endif
   -- | Functor instance of type 'DaysCalendar'
   instance Functor DaysCalendar where
     fmap f dc = DaysCalendar fm
@@ -420,9 +429,9 @@ fromDates
   replica_ n p = if null p || n == 0 then V.empty else ans
     where
       ans = V.fromList . take n $ concat (replicate m p)
-      m' :: Integral c => c
+      m' :: Num Int => Int
       m' = ceiling . fromIntegral $ quot n (length p)
-      m = if m' == 0 then 1 else m' + 1
+      m = if m' == (0::Int) then 1 else m' + 1
 
   -- | Projects a finite vector on all DaysCalendar
   --TODO: Implementar
@@ -444,7 +453,6 @@ fromDates
   -- | DaysCalendar Operator Type
   data DaysCalendarOp = DcOr
                       | DcAnd
-                      | DcInvert
                       | DcAdd
                       | DcSustract
                       | DcMatchAny
@@ -496,8 +504,8 @@ fromDates
     | dc1' > 1 || dc2' > 1          = 1     --Si cualquiera de los dos es mayor a 1 entonces 1
     | otherwise                     = 0     --Cualquier otro caso considerar 0
     where
-      dc1' = if dc1 >=1 then 1 else 0
-      dc2' = if dc2 >=1 then 1 else 0
+      dc1' = if dc1 >=1 then 1::BiDay else 0::BiDay
+      dc2' = if dc2 >=1 then 1::BiDay else 0::BiDay
 
   -- | Invert DaysCalendar
   invert :: DaysCalendar BiDay -> DaysCalendar BiDay
@@ -537,7 +545,7 @@ fromDates
   -- | Operación de agrega (suma) BiDay
   add_ ::  BiDay -> BiDay -> BiDay
   add_ bd1 bd2
-    | bd1==1            = 1
+    | bd1==1 || bd2==1  = 1
     | bd1==0 && bd2==1  = 1
     | bd1==0 && bd2==0  = 0
 
