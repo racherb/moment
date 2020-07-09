@@ -18,15 +18,12 @@ import Prelude as Exports (
     takeWhile,
     scanl,
     replicate,
-    ceiling,
+    --ceiling,
     concat,
     lookup,
     elem,
     replicate,
     foldr,
-    --fromIntegral,
-    --ceiling,
-    --quot,
     Functor(..)
     )
 
