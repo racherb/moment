@@ -7,7 +7,7 @@ module Moment.Prelude (
 
 import Prelude as Exports (
     read,
-    show,
+    --show,
     length,
     take,
     drop,
@@ -24,9 +24,9 @@ import Prelude as Exports (
     elem,
     replicate,
     foldr,
-    fromIntegral,
-    ceiling,
-    quot,
+    --fromIntegral,
+    --ceiling,
+    --quot,
     Functor(..)
     )
 
