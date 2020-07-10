@@ -34,62 +34,69 @@ For example:
 {-# LANGUAGE FlexibleContexts        #-}
 {-# LANGUAGE MonoLocalBinds          #-}
 {-# LANGUAGE CPP                     #-}
+{-# LANGUAGE MagicHash               #-}
+{-# LANGUAGE BangPatterns            #-}
+{-# LANGUAGE Unsafe                  #-}
+
 
 --{-# OPTIONS_GHC -fwarn-missing-signatures #-}
 
 module Moment.Calendar.Internals (
 -- * Types
-Day,
-DaysCalendar(..),
-BiDay,
-YearCalendar,
-MonthCalendar,
+  Day
+, BiDay
+, YearCalendar
+, MonthCalendar
+, DaysCalendar(..)
 -- * Vectors
-nub,
-sort,
-(!),
+, nub
+, sort
+, (!)
 -- * Constructors
-empty,
-singleton,
-make,
-ones,
-zeros,
-step,
-pulse,
-section,
-replica,
+, empty
+, singleton
+, make
+, ones
+,zeros
+, step
+, pulse
+, section
+, replica
 -- * Queries
-qyearc,
-qmonthc,
-eyc,
-eymc,
-emyc,
-edmc,
+, qyearc
+, qmonthc
+, eyc
+, eymc
+, emyc
+, edmc
 -- * DaysCalendar functions
-or,
-and,
-invert,
-add,
-sustract,
-normalize,
-holes,
-match,
-move,
-reverse,
-oddd,
-evend,
-dropydc,
-dropmdc,
-dropymdc,
-
+, or
+, and
+, invert
+, add
+, sustract
+, normalize
+, holes
+, match
+, move
+, reverse
+, oddd
+, evend
+, dropydc
+, dropmdc
+, dropymdc
 -- * Conversion
-toDay,
-toDates,
-fromDates
+, toDay
+, toDates
+, fromDates
+
+-- * Helpers
+
 
 ) where
   
   import Moment.Prelude
+  import Prelude hiding (or, and, reverse)
   import Data.Vector ((!))
   import qualified Data.Vector as V
   import qualified Data.Vector.Algorithms.Merge as V (sort)
@@ -103,6 +110,7 @@ fromDates
   -- ? Expose in API?
   -- TODO: Refactor this method
 
+  {-@ type Nat = {v:Int | 0 <= v} @-}
   type YearCalendar = Integer    -- ^ Calendar year, 2020
   type MonthCalendar = Int       -- ^ Month Calendar 1..12
   type WeekDay = Int             -- ^ Week day index 1..7
@@ -129,7 +137,7 @@ fromDates
   -- | Arrange the elements of a vector
   sort :: Ord a => V.Vector a -> V.Vector a
   {-# INLINE sort #-}
-  sort v = ST.runST $ do
+  sort !v = ST.runST $ do
     mv <- V.thaw v
     V.sort mv
     V.freeze mv
@@ -206,7 +214,7 @@ fromDates
   -- Returns an ordered list of unique items
   -- eyc: extractYearsCalendar
   eyc :: DaysCalendar a -> V.Vector YearCalendar
-  eyc (DaysCalendar d) = sort . nub $ fmap fst3 d
+  eyc (DaysCalendar !d) = sort . nub $ fmap fst3 d
   --sort . nub $ fmap (tft3)
 
  -- | Extract every single year and month from a 'DaysCalendar'
@@ -240,7 +248,7 @@ fromDates
   dropymdc y m dc = DaysCalendar $ (V.filter (\x -> not ((fst3 x)==y && (snd3 x)==m)) (unDaysCalendar dc))
 
   resume :: DaysCalendarOp -> DaysCalendar BiDay -> DaysCalendar BiDay
-  resume mth dc = case lenuy of
+  resume !mth !dc = case lenuy of
                                0 -> empty
                                1 -> resumeYm (V.head uniqyl)
                                _ -> (resumeYm (V.head uniqyl)) <> resumeNext (V.tail uniqyl)
@@ -275,11 +283,11 @@ fromDates
   -- | Merges the elements of DaysCalendar based on the AND operator.
   -- Join two DaysCalendar based on 'DcAnd' operator
   and :: DaysCalendar BiDay -> DaysCalendar BiDay -> DaysCalendar BiDay
-  and dc1 dc2 = resume DcAnd $ dc1 <> dc2
+  and !dc1 !dc2 = resume DcAnd $ dc1 <> dc2
 
   -- | Find any match between the elements of two 'DaysCalendar' types
   match :: DaysCalendar BiDay -> DaysCalendar BiDay -> DaysCalendar BiDay
-  match dc1 dc2 = resume DcMatchAny $ dc1 <> dc2
+  match !dc1 !dc2 = resume DcMatchAny $ dc1 <> dc2
 
   -- | Operación de agrega (suma) BiDay
   match_ ::  BiDay -> BiDay -> BiDay
@@ -295,13 +303,13 @@ fromDates
   reverse :: DaysCalendar a  -> DaysCalendar a --V.Vector (YearCalendar, MonthCalendar, V.Vector a)
   reverse dc = DaysCalendar $ V.reverse (unDaysCalendar dc)
 
-  -- | Completa un vector de BiDay incorporando el valor BiDay hasta completar los n elementos despues del último valor
-  -- n es la cantidad de elementos
-  -- k es el valor de los nuevos elementos
-  -- v es el vector de BiDay
+  -- | Complete a BiDay vector by incorporating the BiDay value until the n elements after the last value are completed
+  -- 'n' is the number of elements
+  -- 'k' is the value of the new elements
+  -- 'v' is the vector of BiDay
   fullyd_ :: Int -> BiDay -> V.Vector BiDay -> V.Vector BiDay
   {-# INLINE fullyd_ #-}
-  fullyd_ n k v = case compare ni 0 of
+  fullyd_ n k !v = case compare ni 0 of
                         EQ -> v
                         LT -> V.take n v
                         GT -> v V.++ V.replicate ni k
@@ -438,9 +446,6 @@ fromDates
   --projection :: V.Vector BiDay -> DaysCalendar BiDay -> DaysCalendar BiDay
   --projection vd dc = empty
 
-  mkIdDays_ :: YearCalendar -> MonthCalendar -> V.Vector IdDay
-  mkIdDays_ y m = V.fromList [1..(nDays y m)]
-
   -- | Build a DaysCalendar type
   -- @
   --    make 2017 4 (step_ 1 2 9)
@@ -479,7 +484,7 @@ fromDates
   --{-# INLINE applyOperator #-}
   applyOperator :: Eq b => (b -> b -> b) -> V.Vector b -> V.Vector b -> V.Vector b
   {-# INLINE applyOperator #-}
-  applyOperator h v1 v2
+  applyOperator !h !v1 !v2
     | (v1==V.empty) && (v2==V.empty)        = V.empty
     | (v1/=V.empty) && (v2==V.empty)        = v1
     | (v1==V.empty) && (v2/=V.empty)        = v2
@@ -487,7 +492,7 @@ fromDates
 
   -- | Join de DaysCalendar basado en el operador DcOr
   or :: DaysCalendar BiDay -> DaysCalendar BiDay -> DaysCalendar BiDay
-  or dc1 dc2 = resume DcOr $ dc1 <> dc2
+  or !dc1 !dc2 = resume DcOr $ dc1 <> dc2
 
   -- | Atomic join of calendars
   -- Lists can have different sizes, result is returned with size of the smallest  ordc ::  V.Vector BiDay -> V.Vector BiDay -> V.Vector BiDay
@@ -512,16 +517,16 @@ fromDates
   invert = fmap invert_
 
   -- | Inversion values of a BiDay vector
-  invertd ::  V.Vector BiDay -> V.Vector BiDay
-  invertd dc = if dc==V.empty then V.empty else fmap invert_ dc
+  --invertd ::  V.Vector BiDay -> V.Vector BiDay
+  --invertd dc = if dc==V.empty then V.empty else fmap invert_ dc
 
   -- | BiDay investment operator
   invert_ ::  BiDay -> BiDay
   invert_ dc
-    | dc == 0 = 1
-    | dc == 1 = 0
-    | dc < 0  = 1
-    | dc > 1  = 0
+    | dc == 0  = 1
+    | dc == 1  = 0
+    | dc <= 0  = 1
+    | dc >= 1  = 0
 
   -- | Join de DaysCalendar basado en el operador DcSustract
   sustract :: DaysCalendar BiDay -> DaysCalendar BiDay -> DaysCalendar BiDay
@@ -540,7 +545,7 @@ fromDates
 
   -- | Join de DaysCalendar basado en el operador DcAdd
   add :: DaysCalendar BiDay -> DaysCalendar BiDay -> DaysCalendar BiDay
-  add dc1 dc2 = resume DcAdd $ dc1<>dc2
+  add !dc1 !dc2 = resume DcAdd $ dc1<>dc2
 
   -- | Operación de agrega (suma) BiDay
   add_ ::  BiDay -> BiDay -> BiDay
@@ -554,7 +559,7 @@ fromDates
 
   -- | Gets the mismatched items (or holes) between two 'DaysCalendar' types
   holes :: DaysCalendar BiDay -> DaysCalendar BiDay -> DaysCalendar BiDay
-  holes dc1 dc2 = invert $ add dc1 dc2
+  holes !dc1 !dc2 = invert $ add dc1 dc2
   
   weekday_ :: YearCalendar -> MonthCalendar -> WeekDay -> V.Vector BiDay
   weekday_ y m wd = fmap (\x -> if x==wd then 1 else 0) wdi
@@ -586,12 +591,15 @@ fromDates
   weekDayIndex y m d = read (formatTime defaultTimeLocale "%u" t)::WeekDay
     where t = makeUtcTime y m d 0 0 0
 
+  makeIdDays :: YearCalendar -> MonthCalendar -> V.Vector IdDay
+  makeIdDays y m = V.fromList [1..(nDays y m)]
+
   -- | Gets a vector with all the weeDay index values for a given month
   -- @
   --  weekDayIndexes 2017 1
   -- @
   weekDayIndexes :: YearCalendar -> MonthCalendar -> V.Vector IdDay
-  weekDayIndexes y m = fmap (weekDayIndex y m) dd where dd = mkIdDays_ y m
+  weekDayIndexes y m = fmap (weekDayIndex y m) dd where dd = makeIdDays y m
 
   {- --TODO: Terminar esto
   --weekMonthIndex :: (Num Int) => YearCalendar -> MonthCalendar -> IdDay -> Maybe Int
@@ -606,11 +614,12 @@ fromDates
   --moveDays (1) [2016-01-02,2016-01-03,2016-01-06,2016-01-07,2016-01-10,2016-01-11,2016-01-14,2016-01-15,2016-01-18,2016-01-19,2016-01-22,2016-01-23,2016-01-26,2016-01-27,2016-01-30,2016-01-31]
   --moveDays (-1) [2016-01-02,2016-01-03,2016-01-06,2016-01-07,2016-01-10,2016-01-11,2016-01-14,2016-01-15,2016-01-18,2016-01-19,2016-01-22,2016-01-23,2016-01-26,2016-01-27,2016-01-30,2016-01-31]
   moveDays :: Integer -> V.Vector Day -> V.Vector Day
-  moveDays n d = fmap (\x -> addDays n x) d
+  moveDays !n !d = fmap (\x -> addDays n x) d
 
-  -- Suma o resta n días al calendario dado en dc
+  -- | Moves a calendar 'n' days
+  -- Add or subtract 'n' days to the calendar given in 'dc'
   move :: Integer -> DaysCalendar BiDay -> DaysCalendar BiDay
-  move n dc = fromDates $ moveDays n (toDates dc)
+  move !n !dc = fromDates $ moveDays n (toDates dc)
 
   move_ :: Num BiDay => YearCalendar -> MonthCalendar -> Int -> V.Vector BiDay -> V.Vector BiDay
   move_ y m n v = ans
@@ -628,7 +637,7 @@ fromDates
   -- | Convierte a fechas un vector de DaysCalendar
   toDates :: DaysCalendar BiDay -> V.Vector Day
   {-# INLINE toDates #-}
-  toDates dc = ans''
+  toDates !dc = ans''
     where
       dc' = normalize dc
       uym = eymc dc'
