@@ -42,6 +42,12 @@ module Moment.Calendar.DaysCalendarSpec (spec) where
 
   vPulse :: String
   vPulse = "DaysCalendar {unDaysCalendar = [(2020,2,[0,0,0,0,1,0,1,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0])]}"
+  
+  j :: DaysCalendar BiDay
+  j = step 0 1 10 $ make 2020 01 (V.fromList [])
+  
+  jDates :: V.Vector Day
+  jDates = V.fromList [toDay 2020 01 02, toDay 2020 01 04, toDay 2020 01 06, toDay 2020 01 08, toDay 2020 01 10]
 
   spec :: Spec
   spec = do
@@ -75,3 +81,9 @@ module Moment.Calendar.DaysCalendarSpec (spec) where
         normalize (z<>y<>x) `shouldBe` (read $ vMix::(DaysCalendar BiDay))
       it "normalize [from z<>x<>y]" $ do
         normalize (z<>x<>y) `shouldBe` (read $ vMix::(DaysCalendar BiDay))
+
+    describe "DaysCalendar Conversion" $ do
+      it "to dates" $ do
+        toDates j `shouldBe` jDates
+      it "from dates" $ do
+        fromDates jDates `shouldBe` j
