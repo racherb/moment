@@ -57,7 +57,7 @@ module Moment.Calendar.Internals (
 , singleton
 , make
 , ones
-,zeros
+, zeros
 , step
 , pulse
 , section
@@ -96,9 +96,9 @@ module Moment.Calendar.Internals (
 ) where
   
   import Moment.Prelude
-  import Prelude hiding (or, and, reverse)
   import Data.Vector ((!))
   import qualified Data.Vector as V
+  import qualified Data.Vector.Unboxed as U
   import qualified Data.Vector.Algorithms.Merge as V (sort)
   import Data.Time (formatTime, defaultTimeLocale, Day, toGregorian, addDays, utctDay, gregorianMonthLength)
   import qualified Control.Monad.ST as ST
@@ -119,7 +119,9 @@ module Moment.Calendar.Internals (
   type IdDay = Int               -- ^ Index Day
   
   -- | newtype DaysCalendar a = DaysCalendar {unDaysCalendar :: V.Vector (YearCalendar, MonthCalendar, V.Vector a)} deriving (Show, Eq, Read)
-  newtype DaysCalendar a = DaysCalendar {unDaysCalendar :: V.Vector (YearCalendar, MonthCalendar, V.Vector a)} deriving (Show, Eq, Read)
+  newtype DaysCalendar a = DaysCalendar {
+    unDaysCalendar :: V.Vector (YearCalendar, MonthCalendar, V.Vector a)
+    } deriving (Show, Eq, Read)
   
   -- | Return the empty 'DaysCalendar' type element
   empty :: DaysCalendar a
@@ -129,7 +131,7 @@ module Moment.Calendar.Internals (
   -- | Returns the unique elements of a vector
   nub :: Eq a => V.Vector a -> V.Vector a
   {-# INLINE nub #-}
-  nub v
+  nub !v
     | V.null v = V.empty
     | V.any (== V.head v) (V.tail v) = nub $ V.tail v
     | otherwise = V.cons (V.head v) (nub $ V.tail v)
@@ -145,25 +147,29 @@ module Moment.Calendar.Internals (
   -- | Create a 'DaysCalendar' type from an arbitrary minimum expression
   singleton :: (YearCalendar, MonthCalendar, V.Vector a) -> DaysCalendar a
   {-# INLINE singleton #-}
-  singleton x = DaysCalendar $ V.singleton x
+  singleton !x = DaysCalendar $ V.singleton x
   
 #if MIN_VERSION_base(4,9,0)
   -- | Semigroup instance of type 'DaysCalendar'
   -- Since: base 4.9.0.0
   instance Semigroup (DaysCalendar a) where
-    (DaysCalendar a) <> (DaysCalendar b) = DaysCalendar (a V.++ b)
+    {-# INLINE (<>) #-}
+    (DaysCalendar !a) <> (DaysCalendar !b) = DaysCalendar (a V.++ b)
 
   -- | Monoid instance of type 'DaysCalendar'
   instance Monoid (DaysCalendar a) where
+    {-# INLINE mempty #-}
     mempty = empty
 #else
   instance Monoid (DaysCalendar a) where
+    {-# INLINE mempty #-}
+    {-# INLINE (<>) #-}
     mempty = empty
-    (DaysCalendar a) <> (DaysCalendar b) = DaysCalendar (a V.++ b)
+    (DaysCalendar !a) <> (DaysCalendar !b) = DaysCalendar (a V.++ b)
 #endif
   -- | Functor instance of type 'DaysCalendar'
   instance Functor DaysCalendar where
-    fmap f dc = DaysCalendar fm
+    fmap f !dc = DaysCalendar fm
       where
         fm = fmap (\(x, y, z) -> (x,y, fmap (\d -> f d) z)) v
         v = unDaysCalendar dc
@@ -174,7 +180,7 @@ module Moment.Calendar.Internals (
     DaysCalendar {unDaysCalendar = [(2020,1,[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]),(2020,2,[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1])]}  -}
   --qyearc :: YearCalendar -> DaysCalendar a
   qyearc :: YearCalendar ->  DaysCalendar a -> DaysCalendar a
-  qyearc year dayscal = case lenyc of
+  qyearc !year !dayscal = case lenyc of
                              0  -> empty
                              1  -> qyearc' (V.head v) year
                              _  -> (qyearc' (V.head v) year) <> (qyearc year (DaysCalendar $ V.tail v))
@@ -198,7 +204,7 @@ module Moment.Calendar.Internals (
     --    DaysCalendar {unDaysCalendar = [(2020,2,[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1])]}
     -- @
   qmonthc :: YearCalendar -> MonthCalendar -> DaysCalendar a -> DaysCalendar a
-  qmonthc year month dayscal = case lenyc of
+  qmonthc !year !month !dayscal = case lenyc of
                                     0  -> empty
                                     1  -> qmonthc' (V.head v) year month
                                     _  -> (qmonthc' (V.head v) year month) <> (qmonthc year month (DaysCalendar $ V.tail v))
@@ -226,7 +232,7 @@ module Moment.Calendar.Internals (
   -- | Extract all the months contained in a calendar year of 'DaysCalendar'
   -- emyc: extractMonthsOfYearCalendar
   emyc :: YearCalendar -> DaysCalendar a -> V.Vector MonthCalendar
-  emyc year dayscal = sort . nub $ sndpart
+  emyc !year !dayscal = sort . nub $ sndpart
     where
         (DaysCalendar v) = qyearc year dayscal
         sndpart = fmap snd3 v
@@ -234,7 +240,7 @@ module Moment.Calendar.Internals (
   -- | It extracts all the defined calendar days for a given calendar year and month.
   -- edmc: extractDaysOfMonthCalendar
   edmc :: (Eq a) => YearCalendar -> MonthCalendar -> DaysCalendar a ->  V.Vector (V.Vector a)
-  edmc year month dayscal = nub $ fmap thr3 mcal
+  edmc !year !month !dayscal = nub $ fmap thr3 mcal
     where
         mcal = unDaysCalendar $ qmonthc year month dayscal
 
@@ -242,10 +248,10 @@ module Moment.Calendar.Internals (
   dropydc y dc = DaysCalendar $ (V.filter (\x -> ((fst3 x)/=y)) (unDaysCalendar dc))
 
   dropmdc :: MonthCalendar -> DaysCalendar a -> DaysCalendar a
-  dropmdc m dc = DaysCalendar $ (V.filter (\x -> ((snd3 x)/=m)) (unDaysCalendar dc))
+  dropmdc !m !dc = DaysCalendar $ (V.filter (\x -> ((snd3 x)/=m)) (unDaysCalendar dc))
 
   dropymdc :: YearCalendar -> MonthCalendar -> DaysCalendar a -> DaysCalendar a
-  dropymdc y m dc = DaysCalendar $ (V.filter (\x -> not ((fst3 x)==y && (snd3 x)==m)) (unDaysCalendar dc))
+  dropymdc !y !m !dc = DaysCalendar $ (V.filter (\x -> not ((fst3 x)==y && (snd3 x)==m)) (unDaysCalendar dc))
 
   resume :: DaysCalendarOp -> DaysCalendar BiDay -> DaysCalendar BiDay
   resume !mth !dc = case lenuy of
@@ -283,10 +289,12 @@ module Moment.Calendar.Internals (
   -- | Merges the elements of DaysCalendar based on the AND operator.
   -- Join two DaysCalendar based on 'DcAnd' operator
   and :: DaysCalendar BiDay -> DaysCalendar BiDay -> DaysCalendar BiDay
+  {-# INLINE and #-}
   and !dc1 !dc2 = resume DcAnd $ dc1 <> dc2
 
   -- | Find any match between the elements of two 'DaysCalendar' types
   match :: DaysCalendar BiDay -> DaysCalendar BiDay -> DaysCalendar BiDay
+  {-# INLINE match #-}
   match !dc1 !dc2 = resume DcMatchAny $ dc1 <> dc2
 
   -- | Operación de agrega (suma) BiDay
@@ -318,7 +326,8 @@ module Moment.Calendar.Internals (
 
   -- |  Mark (or replace) all DaysCalendar elements with values 1
   ones :: DaysCalendar a -> DaysCalendar BiDay
-  ones dc = DaysCalendar $ fmap (\(x,y) -> (x,y, ones_ $ nDays x y)) uqy
+  {-# INLINE ones #-}
+  ones !dc = DaysCalendar $ fmap (\(x,y) -> (x,y, ones_ $ nDays x y)) uqy
     where
       uqy = eymc dc
 
@@ -327,7 +336,8 @@ module Moment.Calendar.Internals (
 
   -- | Uncheck (or replace) all DaysCalendar items with 0 values
   zeros :: DaysCalendar a -> DaysCalendar BiDay
-  zeros dc = DaysCalendar $ fmap (\(x,y) -> (x,y, zeros_ $ nDays x y)) uqy
+  {-# INLINE zeros #-}
+  zeros !dc = DaysCalendar $ fmap (\(x,y) -> (x,y, zeros_ $ nDays x y)) uqy
     where
       uqy = eymc dc
 
@@ -344,14 +354,15 @@ module Moment.Calendar.Internals (
   step_ _ _ 0 = V.empty
   step_ v s n = replica_ n pattrn
     where
-      pattrn = replicate s v <> replicate s (invert_ v)
+      !pattrn = replicate s v <> replicate s (invert_ v)
 
   -- | Generates a step with 'v' 's' 'n' features throughout 'DaysCalendar'
   -- 'v' is the initial value of the step (0 or 1)
   -- 's' is the step
   -- 'n' is the number of values to be generated
-  step :: BiDay -> Int -> Int -> DaysCalendar a -> DaysCalendar BiDay
-  step v s n dc = normalize $ DaysCalendar (fmap (\(x,y,_) -> (x,y, step_ v s n)) (unDaysCalendar dc))
+  step :: BiDay -> Int -> Int -> DaysCalendar BiDay -> DaysCalendar BiDay
+  {-# INLINE step #-}
+  step !v !s !n !dc = normalize $ DaysCalendar (fmap (\(x,y,_) -> (x,y, step_ v s n)) (unDaysCalendar dc))
 
   -- | Step step starting with values 1
   --stepones_ ::  Int -> Int -> V.Vector BiDay
@@ -362,7 +373,8 @@ module Moment.Calendar.Internals (
   --stepzeros_ = step_ 0
 
   pulse :: BiDay -> Int -> Int -> Int -> DaysCalendar a -> DaysCalendar BiDay
-  pulse s f p n dc = normalize $ DaysCalendar (fmap (\(x,y,_) -> (x,y, pulse_ s f p n)) (unDaysCalendar dc))
+  {-# INLINE pulse #-}
+  pulse s f p n !dc = normalize $ DaysCalendar (fmap (\(x,y,_) -> (x,y, pulse_ s f p n)) (unDaysCalendar dc))
 
   -- | Pulse length 'n' value 's' with frequency 'f' from position 'p
   -- 's' is the value of the signal or pulse
@@ -385,6 +397,7 @@ module Moment.Calendar.Internals (
   --pulse1_ s p n = pulse_ s 0 p n
 
   section :: BiDay -> (IdDay, IdDay) -> Int -> DaysCalendar a -> DaysCalendar BiDay
+  {-# INLINE section #-}
   section v (ti, te) n dc = normalize $ DaysCalendar (fmap (\(x,y,_) -> (x,y, section_ v (ti, te) n)) (unDaysCalendar dc))
 
   -- | Function defined by sections
@@ -408,21 +421,23 @@ module Moment.Calendar.Internals (
   mkDfrec _ _ 0 = []  --If the resulting sample size is 0
   mkDfrec p f n = takeWhile (<=n) $ scanl (\acc _ -> acc+f) p stl
     where
-      stl = replicate ((div n f)+1) r
+      !stl = replicate ((div n f)+1) r
       r :: IdDay
-      r = 0
+      !r = 0
 
   -- | Return 'DaysCalendar' with the odd days of the 'DaysCalendar' entry
   -- 9999 12 31 as infinite
   oddd :: DaysCalendar BiDay -> DaysCalendar BiDay
-  oddd dc = fromDates $ V.filter (/= toDay 9999 12 31) odds
+  {-# INLINE oddd #-}
+  oddd !dc = fromDates $ V.filter (/= toDay 9999 12 31) odds
     where
       dt = toDates dc
       odds = fmap (\x -> if odd $ thr3 (toGregorian x) then x else toDay 9999 12 31) dt
 
   -- | Return 'DaysCalendar' with even numbered days from the 'DaysCalendar' entry
   evend :: DaysCalendar BiDay -> DaysCalendar BiDay
-  evend dc = fromDates $ V.filter (/= toDay 9999 12 31) odds
+  {-# INLINE evend #-}
+  evend !dc = fromDates $ V.filter (/= toDay 9999 12 31) odds
     where
       dt = toDates dc
       odds = fmap (\x -> if even $ thr3 (toGregorian x) then x else toDay 9999 12 31) dt
@@ -430,7 +445,8 @@ module Moment.Calendar.Internals (
   -- | Replicates 'n' times the pattern 'p' within the 'DaysCalendar
   -- The pattern is a 'BiDay' type list
   replica :: Int -> [BiDay] -> DaysCalendar BiDay -> DaysCalendar BiDay
-  replica n p dc = normalize $ DaysCalendar (fmap (\(x,y,_) -> (x,y, replica_ n p)) (unDaysCalendar dc))
+  {-# INLINE replica #-}
+  replica n p !dc = normalize $ DaysCalendar (fmap (\(x,y,_) -> (x,y, replica_ n p)) (unDaysCalendar dc))
 
   -- | Replica el patrón p hasta obtener un vector de BiDay de longitud n
   replica_ :: Int -> [BiDay] -> V.Vector BiDay
@@ -452,8 +468,8 @@ module Moment.Calendar.Internals (
   --
   -- @
   make :: YearCalendar -> MonthCalendar -> V.Vector BiDay -> DaysCalendar BiDay
-  make y m k = normalize . singleton $ (y, m, k)
-
+  {-# INLINE make #-}
+  make !y !m !k = normalize . singleton $ (y, m, k)
 
   -- | DaysCalendar Operator Type
   data DaysCalendarOp = DcOr
@@ -466,19 +482,18 @@ module Moment.Calendar.Internals (
   -- | Folds the items on a list according to the calendar operator to be applied  --En este caso ajoinc
   resumeItself ::  V.Vector BiDay -> Int -> V.Vector (V.Vector BiDay) -> DaysCalendarOp -> V.Vector BiDay
   {-# INLINE resumeItself #-}
-  resumeItself acc nd vv mth = case lwe of
+  resumeItself !acc !nd !vv !mth = case lwe of
                                   0 -> acc
                                   1 -> rsi (V.head vv)
                                   _ -> resumeItself (rsi (V.head vv)) nd (V.tail vv) mth
     where
-      lwe = V.length (V.takeWhile (/= V.empty) vv)
-      rsi x = case mth of
+      !lwe = V.length (V.takeWhile (/= V.empty) vv)
+      rsi !x = case mth of
                    DcOr -> fullyd_ nd 0 $ ordc acc x
                    DcAnd -> fullyd_ nd 0 $ anddc acc x
                    DcSustract -> fullyd_ nd 0 $ sustractc acc x
                    DcAdd -> fullyd_ nd 0 $ addc acc x
                    DcMatchAny -> fullyd_ nd 0 $ matchc acc x
-                   --DcInvert -> invertd x --NOTE: De momento la opción resume Invertido no está permitido
 
   -- | Applies the operator function 'h' between two types 'DaysCalendar 
   --{-# INLINE applyOperator #-}
@@ -492,6 +507,7 @@ module Moment.Calendar.Internals (
 
   -- | Join de DaysCalendar basado en el operador DcOr
   or :: DaysCalendar BiDay -> DaysCalendar BiDay -> DaysCalendar BiDay
+  {-# INLINE or #-}
   or !dc1 !dc2 = resume DcOr $ dc1 <> dc2
 
   -- | Atomic join of calendars
@@ -502,6 +518,7 @@ module Moment.Calendar.Internals (
   -- | Joint operator for Calendar Day
   -- (Old ojoinc)
   ordc_ ::  BiDay -> BiDay -> BiDay
+  {-# INLINE ordc #-}
   ordc_ dc1 dc2
     | dc1' == 1 || dc2' == 1        = 1     --Si alguno de los dos es 1 entonces 1
     | dc1' == 0 && dc2' == 0        = 0     --Si ambos son 0 entonces 0
@@ -530,7 +547,8 @@ module Moment.Calendar.Internals (
 
   -- | Join de DaysCalendar basado en el operador DcSustract
   sustract :: DaysCalendar BiDay -> DaysCalendar BiDay -> DaysCalendar BiDay
-  sustract dc1 dc2 = resume DcSustract $ dc1<>dc2
+  {-# INLINE sustract #-}
+  sustract !dc1 !dc2 = resume DcSustract $ dc1<>dc2
 
   -- | Operación de resta o sustracción BiDay
   -- Quita la marca 1 de dc1 según corresponda dc2
@@ -545,11 +563,13 @@ module Moment.Calendar.Internals (
 
   -- | Join de DaysCalendar basado en el operador DcAdd
   add :: DaysCalendar BiDay -> DaysCalendar BiDay -> DaysCalendar BiDay
+  {-# INLINE add #-}
   add !dc1 !dc2 = resume DcAdd $ dc1<>dc2
 
   -- | Operación de agrega (suma) BiDay
   add_ ::  BiDay -> BiDay -> BiDay
-  add_ bd1 bd2
+  {-# INLINE add_ #-}
+  add_ !bd1 !bd2
     | bd1==1 || bd2==1  = 1
     | bd1==0 && bd2==1  = 1
     | bd1==0 && bd2==0  = 0
@@ -559,6 +579,7 @@ module Moment.Calendar.Internals (
 
   -- | Gets the mismatched items (or holes) between two 'DaysCalendar' types
   holes :: DaysCalendar BiDay -> DaysCalendar BiDay -> DaysCalendar BiDay
+  {-# INLINE holes #-}
   holes !dc1 !dc2 = invert $ add dc1 dc2
   
   weekday_ :: YearCalendar -> MonthCalendar -> WeekDay -> V.Vector BiDay
@@ -614,19 +635,22 @@ module Moment.Calendar.Internals (
   --moveDays (1) [2016-01-02,2016-01-03,2016-01-06,2016-01-07,2016-01-10,2016-01-11,2016-01-14,2016-01-15,2016-01-18,2016-01-19,2016-01-22,2016-01-23,2016-01-26,2016-01-27,2016-01-30,2016-01-31]
   --moveDays (-1) [2016-01-02,2016-01-03,2016-01-06,2016-01-07,2016-01-10,2016-01-11,2016-01-14,2016-01-15,2016-01-18,2016-01-19,2016-01-22,2016-01-23,2016-01-26,2016-01-27,2016-01-30,2016-01-31]
   moveDays :: Integer -> V.Vector Day -> V.Vector Day
+  {-# INLINE moveDays #-}
   moveDays !n !d = fmap (\x -> addDays n x) d
 
   -- | Moves a calendar 'n' days
   -- Add or subtract 'n' days to the calendar given in 'dc'
   move :: Integer -> DaysCalendar BiDay -> DaysCalendar BiDay
+  {-# INLINE move #-}
   move !n !dc = fromDates $ moveDays n (toDates dc)
 
   move_ :: Num BiDay => YearCalendar -> MonthCalendar -> Int -> V.Vector BiDay -> V.Vector BiDay
+  {-# INLINE move_ #-}
   move_ y m n v = ans
     where
-        d = biDay2IdDay v
-        nd = nDays y m
-        nw = fmap (+n) d
+        !d = biDay2IdDay v
+        !nd = nDays y m
+        !nw = fmap (+n) d
         ans = V.fromList $ fmap (\x -> if x `elem` nw then 1 else 0) [1..nd]
 
   -- | Genera una fecha de tipo Day
@@ -652,7 +676,7 @@ module Moment.Calendar.Internals (
       ans' = V.concat $ V.toList ans
       ans'' = V.concat $ V.toList ans'
 
-  -- | Genera el tipo DaysCalendar en base a un vector de fechas calendario
+  -- | generates the type DaysCalendar based on a date vector
   fromDates :: V.Vector Day -> DaysCalendar BiDay
   fromDates d = normalize $ DaysCalendar dd
     where
