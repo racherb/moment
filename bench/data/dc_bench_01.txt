@@ -1,0 +1,283 @@
+Running 1 benchmarks...
+Benchmark bench-dc: RUNNING...
+benchmarked 100/normalize x
+time                 150.1 ns   (145.1 ns .. 155.9 ns)
+                     0.987 R²   (0.977 R² .. 0.996 R²)
+mean                 148.9 ns   (146.4 ns .. 152.9 ns)
+std dev              10.56 ns   (6.920 ns .. 17.54 ns)
+variance introduced by outliers: 45% (moderately inflated)
+
+benchmarked 100/normalize u<>v<>k
+time                 11.68 μs   (11.29 μs .. 12.09 μs)
+                     0.994 R²   (0.991 R² .. 0.997 R²)
+mean                 11.65 μs   (11.50 μs .. 11.82 μs)
+std dev              559.3 ns   (454.7 ns .. 793.4 ns)
+variance introduced by outliers: 28% (moderately inflated)
+
+benchmarked 100/and
+time                 307.1 ns   (298.2 ns .. 317.0 ns)
+                     0.992 R²   (0.986 R² .. 0.996 R²)
+mean                 309.9 ns   (305.1 ns .. 318.1 ns)
+std dev              20.69 ns   (13.93 ns .. 34.64 ns)
+variance introduced by outliers: 43% (moderately inflated)
+
+benchmarked 100/or
+time                 303.6 ns   (294.3 ns .. 312.7 ns)
+                     0.995 R²   (0.992 R² .. 0.997 R²)
+mean                 310.8 ns   (306.7 ns .. 316.8 ns)
+std dev              16.73 ns   (11.45 ns .. 27.30 ns)
+variance introduced by outliers: 32% (moderately inflated)
+
+benchmarked 100/match
+time                 305.7 ns   (298.5 ns .. 314.3 ns)
+                     0.994 R²   (0.989 R² .. 0.998 R²)
+mean                 318.1 ns   (314.2 ns .. 321.9 ns)
+std dev              13.96 ns   (11.84 ns .. 16.97 ns)
+variance introduced by outliers: 24% (moderately inflated)
+
+benchmarked 100/add
+time                 314.7 ns   (305.4 ns .. 323.5 ns)
+                     0.994 R²   (0.991 R² .. 0.997 R²)
+mean                 312.3 ns   (307.1 ns .. 323.8 ns)
+std dev              25.75 ns   (15.13 ns .. 41.83 ns)
+variance introduced by outliers: 54% (severely inflated)
+
+benchmarked 100/sustract
+time                 319.2 ns   (304.8 ns .. 329.1 ns)
+                     0.993 R²   (0.988 R² .. 0.996 R²)
+mean                 309.6 ns   (305.8 ns .. 313.1 ns)
+std dev              12.53 ns   (10.54 ns .. 15.62 ns)
+variance introduced by outliers: 22% (moderately inflated)
+
+benchmarked 100/holes
+time                 335.0 ns   (322.3 ns .. 348.3 ns)
+                     0.990 R²   (0.984 R² .. 0.995 R²)
+mean                 327.4 ns   (322.9 ns .. 333.0 ns)
+std dev              16.68 ns   (14.07 ns .. 21.04 ns)
+variance introduced by outliers: 30% (moderately inflated)
+
+benchmarked 100/reverse
+time                 19.00 ns   (18.36 ns .. 19.71 ns)
+                     0.991 R²   (0.987 R² .. 0.996 R²)
+mean                 18.86 ns   (18.54 ns .. 19.34 ns)
+std dev              1.292 ns   (860.4 ps .. 1.998 ns)
+variance introduced by outliers: 44% (moderately inflated)
+
+benchmarked 100/ones
+time                 85.05 ns   (79.11 ns .. 92.81 ns)
+                     0.966 R²   (0.942 R² .. 0.988 R²)
+mean                 85.94 ns   (83.56 ns .. 89.25 ns)
+std dev              9.469 ns   (6.219 ns .. 14.60 ns)
+variance introduced by outliers: 67% (severely inflated)
+
+benchmarked 100/zeros
+time                 84.68 ns   (81.21 ns .. 89.20 ns)
+                     0.985 R²   (0.975 R² .. 0.993 R²)
+mean                 83.73 ns   (82.34 ns .. 85.74 ns)
+std dev              5.972 ns   (4.468 ns .. 7.881 ns)
+variance introduced by outliers: 46% (moderately inflated)
+
+benchmarked 100/oddd
+time                 2.649 μs   (2.556 μs .. 2.738 μs)
+                     0.988 R²   (0.978 R² .. 0.994 R²)
+mean                 2.742 μs   (2.663 μs .. 2.895 μs)
+std dev              369.0 ns   (214.8 ns .. 646.1 ns)
+variance introduced by outliers: 77% (severely inflated)
+
+benchmarked 100/evend
+time                 10.13 μs   (9.640 μs .. 10.67 μs)
+                     0.982 R²   (0.971 R² .. 0.993 R²)
+mean                 10.29 μs   (9.943 μs .. 11.39 μs)
+std dev              1.911 μs   (587.4 ns .. 3.556 μs)
+variance introduced by outliers: 85% (severely inflated)
+
+benchmarked 100/make
+time                 154.2 ns   (148.4 ns .. 160.7 ns)
+                     0.987 R²   (0.975 R² .. 0.995 R²)
+mean                 154.0 ns   (151.4 ns .. 157.6 ns)
+std dev              10.07 ns   (7.436 ns .. 14.76 ns)
+variance introduced by outliers: 40% (moderately inflated)
+
+benchmarked 100/move 1
+time                 4.871 μs   (4.649 μs .. 5.229 μs)
+                     0.977 R²   (0.953 R² .. 0.997 R²)
+mean                 4.820 μs   (4.747 μs .. 4.950 μs)
+std dev              320.2 ns   (205.0 ns .. 523.8 ns)
+variance introduced by outliers: 41% (moderately inflated)
+
+benchmarked 100/move 1000
+time                 5.238 μs   (5.039 μs .. 5.415 μs)
+                     0.987 R²   (0.975 R² .. 0.995 R²)
+mean                 5.521 μs   (5.404 μs .. 5.720 μs)
+std dev              524.0 ns   (317.4 ns .. 793.2 ns)
+variance introduced by outliers: 60% (severely inflated)
+
+benchmarked 100/toDates
+time                 838.6 ns   (796.0 ns .. 870.6 ns)
+                     0.954 R²   (0.897 R² .. 0.988 R²)
+mean                 927.3 ns   (892.6 ns .. 996.4 ns)
+std dev              155.1 ns   (79.29 ns .. 248.0 ns)
+variance introduced by outliers: 83% (severely inflated)
+
+benchmarked 100/step
+time                 204.0 ns   (191.1 ns .. 225.8 ns)
+                     0.939 R²   (0.885 R² .. 0.983 R²)
+mean                 190.6 ns   (182.8 ns .. 200.7 ns)
+std dev              28.10 ns   (20.32 ns .. 38.84 ns)
+variance introduced by outliers: 78% (severely inflated)
+
+benchmarked 100/pulse
+time                 170.0 ns   (155.7 ns .. 185.1 ns)
+                     0.956 R²   (0.923 R² .. 0.985 R²)
+mean                 189.1 ns   (181.7 ns .. 200.7 ns)
+std dev              31.17 ns   (20.97 ns .. 45.93 ns)
+variance introduced by outliers: 83% (severely inflated)
+
+benchmarked 100/section
+time                 173.2 ns   (167.3 ns .. 178.8 ns)
+                     0.989 R²   (0.977 R² .. 0.995 R²)
+mean                 173.6 ns   (170.2 ns .. 180.4 ns)
+std dev              15.78 ns   (9.659 ns .. 25.68 ns)
+variance introduced by outliers: 57% (severely inflated)
+
+benchmarked 1000/normalize x
+time                 148.7 ns   (140.8 ns .. 156.3 ns)
+                     0.980 R²   (0.958 R² .. 0.993 R²)
+mean                 155.2 ns   (148.5 ns .. 183.9 ns)
+std dev              39.02 ns   (9.318 ns .. 85.64 ns)
+variance introduced by outliers: 93% (severely inflated)
+
+benchmarked 1000/normalize u<>v<>k
+time                 12.08 μs   (11.68 μs .. 12.58 μs)
+                     0.988 R²   (0.975 R² .. 0.995 R²)
+mean                 12.18 μs   (11.99 μs .. 12.42 μs)
+std dev              750.8 ns   (558.7 ns .. 1.111 μs)
+variance introduced by outliers: 39% (moderately inflated)
+
+benchmarked 1000/and
+time                 323.2 ns   (306.9 ns .. 338.0 ns)
+                     0.985 R²   (0.973 R² .. 0.994 R²)
+mean                 313.1 ns   (306.9 ns .. 322.5 ns)
+std dev              24.24 ns   (15.67 ns .. 42.50 ns)
+variance introduced by outliers: 50% (moderately inflated)
+
+benchmarked 1000/or
+time                 324.5 ns   (305.6 ns .. 344.9 ns)
+                     0.976 R²   (0.959 R² .. 0.991 R²)
+mean                 319.1 ns   (312.4 ns .. 328.7 ns)
+std dev              27.85 ns   (18.59 ns .. 42.61 ns)
+variance introduced by outliers: 57% (severely inflated)
+
+benchmarked 1000/match
+time                 318.0 ns   (300.8 ns .. 330.9 ns)
+                     0.983 R²   (0.965 R² .. 0.993 R²)
+mean                 317.0 ns   (310.9 ns .. 325.0 ns)
+std dev              22.45 ns   (16.30 ns .. 35.94 ns)
+variance introduced by outliers: 44% (moderately inflated)
+
+benchmarked 1000/add
+time                 311.1 ns   (303.0 ns .. 318.3 ns)
+                     0.995 R²   (0.991 R² .. 0.998 R²)
+mean                 311.9 ns   (307.7 ns .. 318.5 ns)
+std dev              17.41 ns   (11.89 ns .. 29.47 ns)
+variance introduced by outliers: 33% (moderately inflated)
+
+benchmarked 1000/sustract
+time                 313.7 ns   (308.1 ns .. 322.0 ns)
+                     0.996 R²   (0.994 R² .. 0.998 R²)
+mean                 313.8 ns   (309.8 ns .. 322.5 ns)
+std dev              18.18 ns   (10.80 ns .. 32.23 ns)
+variance introduced by outliers: 35% (moderately inflated)
+
+benchmarked 1000/holes
+time                 345.3 ns   (322.6 ns .. 374.2 ns)
+                     0.974 R²   (0.953 R² .. 0.995 R²)
+mean                 328.5 ns   (323.4 ns .. 339.1 ns)
+std dev              22.06 ns   (14.82 ns .. 35.53 ns)
+variance introduced by outliers: 42% (moderately inflated)
+
+benchmarked 1000/reverse
+time                 19.29 ns   (18.65 ns .. 19.95 ns)
+                     0.992 R²   (0.988 R² .. 0.995 R²)
+mean                 18.99 ns   (18.67 ns .. 19.29 ns)
+std dev              1.067 ns   (898.0 ps .. 1.252 ns)
+variance introduced by outliers: 35% (moderately inflated)
+
+benchmarked 1000/ones
+time                 87.05 ns   (81.59 ns .. 92.73 ns)
+                     0.982 R²   (0.974 R² .. 0.994 R²)
+mean                 84.89 ns   (83.38 ns .. 86.69 ns)
+std dev              5.408 ns   (4.297 ns .. 6.763 ns)
+variance introduced by outliers: 39% (moderately inflated)
+
+benchmarked 1000/zeros
+time                 79.92 ns   (77.07 ns .. 82.24 ns)
+                     0.990 R²   (0.980 R² .. 0.996 R²)
+mean                 84.31 ns   (82.58 ns .. 87.49 ns)
+std dev              7.682 ns   (4.656 ns .. 13.32 ns)
+variance introduced by outliers: 58% (severely inflated)
+
+benchmarked 1000/oddd
+time                 2.678 μs   (2.596 μs .. 2.784 μs)
+                     0.990 R²   (0.976 R² .. 0.997 R²)
+mean                 2.703 μs   (2.665 μs .. 2.752 μs)
+std dev              148.4 ns   (110.6 ns .. 210.4 ns)
+variance introduced by outliers: 33% (moderately inflated)
+
+benchmarked 1000/evend
+time                 10.41 μs   (10.03 μs .. 10.90 μs)
+                     0.991 R²   (0.983 R² .. 0.997 R²)
+mean                 10.17 μs   (10.04 μs .. 10.34 μs)
+std dev              487.6 ns   (382.6 ns .. 706.3 ns)
+variance introduced by outliers: 27% (moderately inflated)
+
+benchmarked 1000/make
+time                 159.5 ns   (153.4 ns .. 166.5 ns)
+                     0.987 R²   (0.975 R² .. 0.995 R²)
+mean                 158.1 ns   (154.4 ns .. 167.2 ns)
+std dev              19.65 ns   (8.596 ns .. 41.13 ns)
+variance introduced by outliers: 74% (severely inflated)
+
+benchmarked 1000/move 1
+time                 4.824 μs   (4.641 μs .. 5.067 μs)
+                     0.987 R²   (0.978 R² .. 0.997 R²)
+mean                 4.888 μs   (4.806 μs .. 5.034 μs)
+std dev              355.6 ns   (199.7 ns .. 637.0 ns)
+variance introduced by outliers: 46% (moderately inflated)
+
+benchmarked 1000/move 1000
+time                 5.682 μs   (5.437 μs .. 5.942 μs)
+                     0.988 R²   (0.980 R² .. 0.996 R²)
+mean                 5.511 μs   (5.423 μs .. 5.612 μs)
+std dev              318.1 ns   (251.2 ns .. 406.2 ns)
+variance introduced by outliers: 36% (moderately inflated)
+
+benchmarked 1000/toDates
+time                 884.4 ns   (855.8 ns .. 937.3 ns)
+                     0.988 R²   (0.974 R² .. 0.998 R²)
+mean                 886.2 ns   (875.3 ns .. 902.4 ns)
+std dev              42.99 ns   (30.47 ns .. 72.72 ns)
+variance introduced by outliers: 29% (moderately inflated)
+
+benchmarked 1000/step
+time                 172.2 ns   (166.2 ns .. 177.6 ns)
+                     0.991 R²   (0.982 R² .. 0.996 R²)
+mean                 170.2 ns   (167.6 ns .. 173.5 ns)
+std dev              10.19 ns   (8.031 ns .. 15.19 ns)
+variance introduced by outliers: 37% (moderately inflated)
+
+benchmarked 1000/pulse
+time                 171.7 ns   (164.6 ns .. 179.9 ns)
+                     0.985 R²   (0.965 R² .. 0.996 R²)
+mean                 169.3 ns   (166.9 ns .. 173.2 ns)
+std dev              9.958 ns   (7.572 ns .. 16.32 ns)
+variance introduced by outliers: 36% (moderately inflated)
+
+benchmarked 1000/section
+time                 172.8 ns   (164.9 ns .. 181.6 ns)
+                     0.971 R²   (0.940 R² .. 0.991 R²)
+mean                 176.6 ns   (172.0 ns .. 182.4 ns)
+std dev              17.74 ns   (11.10 ns .. 23.55 ns)
+variance introduced by outliers: 63% (severely inflated)
+
+Benchmark bench-dc: FINISH
