@@ -87,3 +87,9 @@ module Moment.Calendar.DaysCalendarSpec (spec) where
         toDates j `shouldBe` jDates
       it "from dates" $ do
         fromDates jDates `shouldBe` j
+    
+    describe "DaysCalendar Queries" $ do
+      it "by year" $ do
+        qyearc 2020 (normalize (z<>x<>y)) `shouldBe` (read $ vMix::(DaysCalendar BiDay))
+      it "by month" $ do
+        qmonthc 2020 1 (normalize (z<>x<>y)) `shouldBe` (read $ vMix::(DaysCalendar BiDay))
