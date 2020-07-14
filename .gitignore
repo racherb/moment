@@ -1,0 +1,14 @@
+
+dist/build/
+
+*.so
+
+dist/
+
+*.o
+
+*.hi
+
+src/Moment/Calendar/.liquid/
+
+src/Moment/.liquid/
