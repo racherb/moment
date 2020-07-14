@@ -49,7 +49,7 @@ module Moment.Calendar.Internals (
 , MonthCalendar
 , DaysCalendar(..)
 -- * Vectors
-, nub
+, uniq
 , sort
 , (!)
 -- * Constructors
@@ -129,12 +129,16 @@ module Moment.Calendar.Internals (
   empty = DaysCalendar V.empty
 
   -- | Returns the unique elements of a vector
-  nub :: Eq a => V.Vector a -> V.Vector a
-  {-# INLINE nub #-}
-  nub !v
+  uniq :: Eq a => V.Vector a -> V.Vector a
+  {-# INLINE uniq #-}
+#if MIN_VERSION_vector(0,12,0)
+  uniq = V.uniq
+#else
+  uniq !v
     | V.null v = V.empty
-    | V.any (== V.head v) (V.tail v) = nub $ V.tail v
-    | otherwise = V.cons (V.head v) (nub $ V.tail v)
+    | V.any (== V.head v) (V.tail v) = uniq $ V.tail v
+    | otherwise = V.cons (V.head v) (uniq $ V.tail v)
+#endif
 
   -- | Arrange the elements of a vector
   sort :: Ord a => V.Vector a -> V.Vector a
@@ -147,7 +151,7 @@ module Moment.Calendar.Internals (
   -- | Create a 'DaysCalendar' type from an arbitrary minimum expression
   singleton :: (YearCalendar, MonthCalendar, V.Vector a) -> DaysCalendar a
   {-# INLINE singleton #-}
-  singleton !x = DaysCalendar $ V.singleton x
+  singleton x = DaysCalendar $ V.singleton x
   
 #if MIN_VERSION_base(4,9,0)
   -- | Semigroup instance of type 'DaysCalendar'
@@ -169,10 +173,10 @@ module Moment.Calendar.Internals (
 #endif
   -- | Functor instance of type 'DaysCalendar'
   instance Functor DaysCalendar where
-    fmap f !dc = DaysCalendar fm
+    fmap f dc = DaysCalendar fm
       where
-        fm = fmap (\(x, y, z) -> (x,y, fmap (\d -> f d) z)) v
-        v = unDaysCalendar dc
+        fm = fmap (\(x, y, z) -> (x,y, fmap f z)) v
+        !v = unDaysCalendar dc
 
   {-|
     'qyearc' Get all the DaysCalendar elements that belong to the given year
@@ -180,17 +184,20 @@ module Moment.Calendar.Internals (
     DaysCalendar {unDaysCalendar = [(2020,1,[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]),(2020,2,[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1])]}  -}
   --qyearc :: YearCalendar -> DaysCalendar a
   qyearc :: YearCalendar ->  DaysCalendar a -> DaysCalendar a
-  qyearc !year !dayscal = case lenyc of
+  qyearc !y !dc = 
+      work
+    where 
+      work = case lenyc of
                              0  -> empty
-                             1  -> qyearc' (V.head v) year
-                             _  -> (qyearc' (V.head v) year) <> (qyearc year (DaysCalendar $ V.tail v))
-      where
-          v = unDaysCalendar dayscal
-          lenyc = V.length v
+                             1  -> qyearc' (V.head v) y
+                             _  -> qyearc' (V.head v) y <> qyearc y (DaysCalendar $ V.tail v)
+        where
+          !v = unDaysCalendar dc
+          !lenyc = V.length v
           qyearc' :: (YearCalendar, MonthCalendar, V.Vector a) -> YearCalendar-> DaysCalendar a
           qyearc' tdc _ = ans
               where
-                  ans = if (year==fst3 tdc) then singleton tdc else empty
+                  !ans = if y == fst3 tdc then singleton tdc else empty
 
   -- | Get all DaysCalendar items belonging to the given year and month
     --
@@ -204,43 +211,52 @@ module Moment.Calendar.Internals (
     --    DaysCalendar {unDaysCalendar = [(2020,2,[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1])]}
     -- @
   qmonthc :: YearCalendar -> MonthCalendar -> DaysCalendar a -> DaysCalendar a
-  qmonthc !year !month !dayscal = case lenyc of
+  qmonthc !y !m !dc = case lenyc of
                                     0  -> empty
-                                    1  -> qmonthc' (V.head v) year month
-                                    _  -> (qmonthc' (V.head v) year month) <> (qmonthc year month (DaysCalendar $ V.tail v))
+                                    1  -> qmonthc' (V.head v) y m
+                                    _  -> qmonthc' (V.head v) y m <> qmonthc y m (DaysCalendar $ V.tail v)
       where
-          v = unDaysCalendar dayscal
-          lenyc = V.length v
-          qmonthc' :: (YearCalendar, MonthCalendar, V.Vector a) -> YearCalendar -> MonthCalendar -> DaysCalendar a
-          qmonthc' tdc yyyy mm = ans
+          !v = unDaysCalendar dc
+          !lenyc = V.length v
+          qmonthc' 
+            :: (YearCalendar, MonthCalendar, V.Vector a) 
+            -> YearCalendar
+            -> MonthCalendar
+            -> DaysCalendar a
+          qmonthc' tdc yy mm = ans
               where
-                  ans = if yyyy==fst3 tdc && mm==snd3 tdc then singleton tdc else empty
+                  !ans = if yy==fst3 tdc && mm==snd3 tdc then singleton tdc else empty
 
   -- | Extract every year you present at a given DaysCalendar
   -- Returns an ordered list of unique items
   -- eyc: extractYearsCalendar
   eyc :: DaysCalendar a -> V.Vector YearCalendar
-  eyc (DaysCalendar !d) = sort . nub $ fmap fst3 d
-  --sort . nub $ fmap (tft3)
+  eyc (DaysCalendar !d) = 
+      ans
+    where
+      !ans = sort . uniq $ fmap fst3 d
+  --sort . uniq $ fmap (tft3)
 
  -- | Extract every single year and month from a 'DaysCalendar'
  -- eymc: extractYearsMonthCalendar
   eymc :: DaysCalendar a -> V.Vector (YearCalendar, MonthCalendar)
   {-# INLINE eymc #-}
-  eymc (DaysCalendar d) = sort . nub $ fmap tft3 d
+  eymc (DaysCalendar d) = sort . uniq $ fmap tft3 d
 
   -- | Extract all the months contained in a calendar year of 'DaysCalendar'
   -- emyc: extractMonthsOfYearCalendar
   emyc :: YearCalendar -> DaysCalendar a -> V.Vector MonthCalendar
-  emyc !year !dayscal = sort . nub $ sndpart
+  emyc !y !dc = 
+      ans
     where
-        (DaysCalendar v) = qyearc year dayscal
-        sndpart = fmap snd3 v
+        (DaysCalendar v) = qyearc y dc
+        !sndpart = fmap snd3 v
+        !ans = sort . uniq $ sndpart
 
   -- | It extracts all the defined calendar days for a given calendar year and month.
   -- edmc: extractDaysOfMonthCalendar
   edmc :: (Eq a) => YearCalendar -> MonthCalendar -> DaysCalendar a ->  V.Vector (V.Vector a)
-  edmc !year !month !dayscal = nub $ fmap thr3 mcal
+  edmc !year !month !dayscal = uniq $ fmap thr3 mcal
     where
         mcal = unDaysCalendar $ qmonthc year month dayscal
 
@@ -681,7 +697,7 @@ module Moment.Calendar.Internals (
   fromDates d = normalize $ DaysCalendar dd
     where
       gd = fmap toGregorian d
-      uym = nub $ fmap (\(x,m,_) -> (x,m)) gd
+      uym = uniq $ fmap (\(x,m,_) -> (x,m)) gd
       dd = fmap (\(y', m') -> do
           let ci = V.filter (/=0) $ (fmap (\(y,m,x) -> if (y==y' && m==m') then x::IdDay else 0::IdDay) gd)
           let ct = (y'::YearCalendar, m'::MonthCalendar, idDay2BiDay ci)
@@ -705,7 +721,7 @@ module Moment.Calendar.Internals (
   idDay2BiDay :: V.Vector IdDay -> V.Vector BiDay
   idDay2BiDay v = foldr (\x acc -> (V.update acc (V.singleton ((decreaseOne x)::Int, 1)))) ini vi'
     where
-      vi' = nub $ sort v
+      vi' = uniq $ sort v
       ini = zeros_ $ V.maximum vi' --NOTE: El máximo está acotado el mayor elemento, sin embargo, considere nDays
 
   --Conviete una lista de dias calendario a una lista de índices de lista
@@ -735,28 +751,29 @@ module Moment.Calendar.Internals (
     | (dc1==1) && (dc2==1)  = 1
     | otherwise             = 0
 
-  --Primer elemento de una tupla de tres
+  -- | Returns the first element of a three-element tuple
   fst3 :: (a, b, c) -> a
-  fst3 (x, _, _) = x
+  {-# INLINE fst3 #-}
+  fst3 (!x, _, _) = x
 
-  --Segundo elemento de una tupla de tres
+  -- | Returns the first element of a three-element tuple
   snd3 :: (a, b, c) -> b
-  snd3 (_, y, _) = y
+  {-# INLINE snd3 #-}
+  snd3 (_, !y, _) = y
 
-  --Tercer elemento de una tupla de tres
+  -- Returns the third element of a three-element tuple
   thr3 :: (a, b, c) -> c
-  thr3 (_, _, z) = z
+  {-# INLINE thr3 #-}
+  thr3 (_, _, !z) = z
 
-  --Los dos primeros elementos de una tupla de tres
+  -- | Return the first two elements of a three-element tuple
   tft3 :: (a, b, c) -> (a, b)
-  tft3 (x, y, _) = (x, y)
+  {-# INLINE tft3 #-}
+  tft3 (!x, !y, _) = (x, y)
 
-
-  -- | Obtiene la cantidad de días máximo de un mes dado
-  -- nDays y m 
-  --y es year de 4 dígitos
-  --m es month de 2 dígitos máximo
+  -- | Get the maximum number of days in a given month
   nDays :: Integer -> Int -> Int
+  {-# INLINE nDays #-}
   nDays = gregorianMonthLength
 
 
