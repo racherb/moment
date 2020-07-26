@@ -24,6 +24,8 @@ import Prelude as Exports (
     , replicate
     , foldr
     , Functor(..)
+    , Integer
+    , Num(..)
     )
 
 import Data.Tuple   as Exports
@@ -34,7 +36,8 @@ import GHC.IO       as Exports -- ^ Unsafe. The module itself isn't safe.
 import GHC.Prim     as Exports -- ^ Unsafe. The module itself isn't safe.
 import GHC.Types    as Exports -- ^ Unsafe. The module itself isn't safe.
 import GHC.Exts     as Exports
-import GHC.Num      as Exports
+--import GHC.Num      as Exports
+import Numeric      as Exports
 import GHC.Real     as Exports
 import GHC.Show     as Exports
 import GHC.Read     as Exports
