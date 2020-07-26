@@ -42,7 +42,8 @@ library
                        time              >=1.8    && <1.9.4,
                        unix              >=2.7.2  && <2.8,
                        vector            >=0.12.0 && < 0.12.1,
-                       vector-algorithms >= 0.8.0 && < 0.8.0.4
+                       vector-algorithms >=0.8.0  && < 0.8.0.4
+                       --integer-gmp       >=1.0.2
 
   -- Directories containing source files.
   -- hs-source-dirs:
@@ -57,16 +58,14 @@ library
 test-suite spec
   type:                exitcode-stdio-1.0
   main-is:             Spec.hs
-  hs-source-dirs:
-      test
+  hs-source-dirs:      test
   
   ghc-options:         -O2
   
-  build-depends:
-      base ==4.*
-    , hspec ==2.*
-    , vector ==0.12.*
-    , moment
+  build-depends:       base ==4.*,
+                       hspec ==2.*,
+                       vector ==0.12.*,
+                       moment
   other-modules:
       Moment.Calendar.DaysCalendarSpec
 
@@ -78,9 +77,24 @@ benchmark bench-dc
   type:                exitcode-stdio-1.0
   hs-source-dirs:      bench
   main-is:             DaysCalendarBench.hs
+
   ghc-options:         -O2
-  build-depends: 
-      base ==4.*
-    , gauge ==0.2.*
-    , vector ==0.12.*
-    , moment
+
+  build-depends:       base ==4.*,
+                       gauge ==0.2.*,
+                       vector ==0.12.*,
+                       moment
+
+executable prof-dc
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      prof
+  main-is:             DaysCalendarProfiler.hs
+
+  ghc-options:         -O2
+                       -threaded
+                       -prof
+                       "-with-rtsopts=-N -p -s -h -i0.1"
+
+  build-depends:       base ==4.*,
+                       vector ==0.12.*,
+                       moment
