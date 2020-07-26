@@ -11,17 +11,20 @@ Portability :  portable | non-portable (<reason>)
 
 Helpers.Momentum.Parse
 -}
-module Moment.Parse(currentTime,
-  currentTimeStrIO,
-  currentTimeStr,
-  format,
-  FormatTime(..),
-  stringToDate,
-  extractYear,
-  extractMonth,
-  extractDay,
-  makeUtcTime) where
 
+module Moment.Parse
+  ( currentTime
+  , currentTimeStrIO
+  , currentTimeStr
+  , format
+  , FormatTime(..)
+  , stringToDate
+  , extractYear
+  , extractMonth
+  , extractDay
+  , makeUtcTime
+  ) where
+  
   import Moment.Prelude
 
   import Data.Time
@@ -44,7 +47,7 @@ module Moment.Parse(currentTime,
   -- | Date Formatting
   --TODO: Generalizar expresión usando patrones (regexp)
   --"%Y-%m-%d"
-  format :: FormatTime t => [Char] -> t -> String
+  format :: FormatTime t => String -> t -> String
   format ofmt udt
     | ofmt == "YYYYMMDD"      = applyFormat "%Y%m%d"
     | ofmt == "YYMMDD"        = applyFormat "%y%m%d"
